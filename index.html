@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+  <h1>Academic Dashboard</h1>
+
+  <!-- <input type="file" id="jsonLoader" accept=".json"> -->
+
+</header>
+
+<section id="onboarding" class="card">
+
+  <h2>Bienvenido a Academic Dashboard</h2>
+
+  <label>
+    Tu nombre
+  </label>
+
+  <input
+    type="text"
+    id="userName"
+    placeholder="Ingresá tu nombre"
+  >
+
+  <label>
+    Carrera
+  </label>
+
+  <select id="careerSelect"></select>
+
+  <button id="startAppBtn">
+    Comenzar
+  </button>
+
+</section>
+
+<main
+ class="container"
+ id="appContent">
+
+  <section id="homeScreen">
+    <section id="dashboard"></section>
+  </section>
+
+  <section
+   id="subjectsScreen"
+   style="display:none"
+  >
+    <section id="materias"></section>
+  </section>
+
+  <section
+   id="calendarScreen"
+   style="display:none"
+  >
+
+    <section class="card">
+
+      <div class="calendar-header">
+
+        <button id="prevMonth" aria-label="Mes anterior">
+          ◀
+        </button>
+
+        <h2 id="calendarTitle">
+          Calendario
+        </h2>
+
+        <button id="nextMonth" aria-label="Mes siguiente">
+          ▶
+        </button>
+
+      </div>
+
+      <div id="calendar"></div>
+
+    </section>
+
+  </section>
+
+</main>
+
+<nav class="bottom-nav">
+
+ <button class="nav-btn active" data-screen="home">
+  <span aria-hidden="true">🏠</span>
+  <span>Inicio</span>
+ </button>
+
+ <button class="nav-btn" data-screen="calendar">
+  <span aria-hidden="true">📅</span>
+  <span>Calendario</span>
+ </button>
+
+ <button class="nav-btn" data-screen="subjects">
+  <span aria-hidden="true">📚</span>
+  <span>Materias</span>
+ </button>
+
+</nav>
+
+<div
+ id="modalHorario"
+ class="modal hidden"
+>
+
+ <div class="modal-content">
+
+  <div class="modal-header">
+
+   <h2>
+    Configurar horario
+   </h2>
+
+   <button
+    type="button"
+    class="modal-close"
+    aria-label="Cerrar"
+   >
+    ✕
+   </button>
+
+  </div>
+
+  <div class="modal-body">
+
+  <input
+   type="hidden"
+   id="materiaHorarioId"
+  >
+
+  <input
+ type="hidden"
+ id="editingScheduleId"
+>
+  <label>📚 Materia</label>
+
+  <input
+   id="materiaHorarioNombre"
+   readonly
+  >
+
+  <label>
+ Modalidad
+</label>
+
+<select id="classMode">
+
+ <option value="presencial">
+  🏫 Presencial
+ </option>
+
+ <option value="virtual">
+  💻 Virtual
+ </option>
+
+ <option value="mixta">
+  🔄 Mixta
+ </option>
+
+</select>
+
+  <label>
+   Día
+  </label>
+
+  <select id="weekday">
+
+   <option value="1">
+    Lunes
+   </option>
+
+   <option value="2">
+    Martes
+   </option>
+
+   <option value="3">
+    Miércoles
+   </option>
+
+   <option value="4">
+    Jueves
+   </option>
+
+   <option value="5">
+    Viernes
+   </option>
+
+   <option value="6">
+    Sábado
+   </option>
+
+   <option value="0">
+    Domingo
+   </option>
+
+  </select>
+
+  <div class="form-row">
+
+   <div class="form-field">
+
+    <label>
+     Hora inicio
+    </label>
+
+    <input
+     type="time"
+     id="startTime"
+    >
+
+   </div>
+
+   <div class="form-field">
+
+    <label>
+     Hora fin
+    </label>
+
+    <input
+     type="time"
+     id="endTime"
+    >
+
+   </div>
+
+  </div>
+
+  <div class="form-row">
+
+   <div class="form-field">
+
+    <label>
+     Fecha inicio
+    </label>
+
+    <input
+     type="date"
+     id="startDate"
+    >
+
+   </div>
+
+   <div class="form-field">
+
+    <label>
+     Fecha fin
+    </label>
+
+    <input
+     type="date"
+     id="endDate"
+    >
+
+   </div>
+
+  </div>
+
+  </div>
+
+  <div
+   class="modal-actions"
+  >
+
+   <button
+    id="saveScheduleBtn"
+   >
+    Guardar
+   </button>
+
+   <button
+    id="closeScheduleBtn"
+   >
+    Cancelar
+   </button>
+
+  </div>
+
+ </div>
+
+</div>
+
+
+
+<div
+ id="dayEventsModal"
+ class="modal hidden"
+>
+
+ <div class="modal-content">
+
+  <div class="modal-header">
+
+   <h2 id="dayEventsTitle">
+    Eventos
+   </h2>
+
+   <button
+    type="button"
+    class="modal-close"
+    aria-label="Cerrar"
+   >
+    ✕
+   </button>
+
+  </div>
+
+  <div class="modal-body">
+
+  <div id="dayEventsList">
+  </div>
+
+  </div>
+
+  <div class="modal-actions">
+
+   <button
+    id="newEventBtn"
+   >
+    ➕ Nuevo Evento
+   </button>
+
+   <button
+    id="closeDayEventsBtn"
+   >
+    Cerrar
+   </button>
+
+  </div>
+
+ </div>
+
+</div>
+
+<div
+ id="eventModal"
+ class="modal hidden"
+>
+
+ <div class="modal-content">
+
+  <div class="modal-header">
+
+   <h2>
+    Nuevo Evento
+   </h2>
+
+   <button
+    type="button"
+    class="modal-close"
+    aria-label="Cerrar"
+   >
+    ✕
+   </button>
+
+  </div>
+
+  <div class="modal-body">
+
+  <input
+   type="hidden"
+   id="eventDate"
+  >
+
+  <input
+ type="hidden"
+ id="editingEventId"
+>
+
+  <label>
+   Tipo
+  </label>
+
+  <select id="eventType">
+
+   <option value="parcial">
+    Parcial
+   </option>
+
+   <option value="final">
+    Final
+   </option>
+
+   <option value="recuperatorio">
+    Recuperatorio
+   </option>
+
+   <option value="tp">
+    Entrega TP
+   </option>
+
+   <option value="personalizado">
+    Personalizado
+   </option>
+
+  </select>
+
+  <label>
+   Materia
+  </label>
+
+  <select id="eventMateria">
+  </select>
+
+  <div class="form-row">
+
+   <div class="form-field">
+
+    <label>
+     Hora inicio
+    </label>
+
+    <input
+     type="time"
+     id="eventStart"
+    >
+
+   </div>
+
+   <div class="form-field">
+
+    <label>
+     Hora fin
+    </label>
+
+    <input
+     type="time"
+     id="eventEnd"
+    >
+
+   </div>
+
+  </div>
+
+  <label>
+   Observaciones
+  </label>
+
+  <input
+   id="eventObs"
+   placeholder="Opcional"
+  >
+
+  </div>
+
+  <div class="modal-actions">
+
+   <button
+    id="saveEventBtn"
+   >
+    Guardar
+   </button>
+
+   <button
+    id="closeEventBtn"
+   >
+    Cancelar
+   </button>
+
+  </div>
+
+ </div>
+
+</div>
+
+
+<script src="js/core/storage.js"></script>
+
+<script src="js/plans/psychology.js"></script>
+<script src="js/plans/plans-registry/plans-registry.js"></script>
+
+<script src="js/dash/dashboard.js"></script>
+
+<script src="js/subjects/materias.js"></script>
+
+<script src="js/calendar/eventos.js"></script>
+<script src="js/calendar/calendario.js"></script>
+<script src="js/calendar/calendario-ui.js"></script>
+<script src="js/calendar/calendar-view.js"></script>
+
+<script src="js/navigation/navigation.js"></script>
+
+<script src="js/core/app.js"></script>
