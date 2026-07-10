@@ -180,6 +180,24 @@ function renderCalendar(){
    "click",
    ()=>{
 
+    // Pequeño pulso visual al seleccionar el día, puramente
+    // cosmético (no afecta qué eventos se muestran).
+    cell.classList.add(
+     "day-selected-pulse"
+    );
+
+    cell.addEventListener(
+     "animationend",
+     ()=>{
+
+      cell.classList.remove(
+       "day-selected-pulse"
+      );
+
+     },
+     { once:true }
+    );
+
     showDayEvents(
      dateString
     );
@@ -192,6 +210,19 @@ function renderCalendar(){
   );
 
  }
+
+ // Reinicia y vuelve a aplicar la clase de fade para que la
+ // animación se reproduzca en cada cambio de mes (no solo la
+ // primera vez que se pinta el calendario).
+ container.classList.remove(
+  "calendar-fade"
+ );
+
+ void container.offsetWidth;
+
+ container.classList.add(
+  "calendar-fade"
+ );
 
 }
 

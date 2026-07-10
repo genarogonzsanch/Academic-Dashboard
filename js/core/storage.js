@@ -38,7 +38,8 @@ function saveStates(states){
     allData[careerId] = {
       states:{},
       schedules:[],
-      customEvents:[]
+      customEvents:[],
+      planVersion:0
     };
 
   }
@@ -84,7 +85,8 @@ function saveSchedules(schedules){
     allData[careerId] = {
       states:{},
       schedules:[],
-      customEvents:[]
+      customEvents:[],
+      planVersion:0
     };
 
   }
@@ -147,7 +149,8 @@ function saveCustomEvents(events){
     allData[careerId] = {
       states:{},
       schedules:[],
-      customEvents:[]
+      customEvents:[],
+      planVersion:0
     };
 
   }
@@ -207,6 +210,112 @@ function getSelectedCareer(){
 }
 
 // =========================
+// VERSIÓN DEL PLAN
+// =========================
+//
+// A partir de la migración a soporte multi-carrera, la versión
+// del plan se guarda DENTRO de careerData, por carrera (misma
+// lógica que states/schedules/customEvents). Esto permite que
+// en el futuro convivan varias carreras, cada una con su propio
+// número de versión, sin pisarse entre sí.
+//
+// Se mantiene compatibilidad hacia atrás: si existe la clave
+// global "planVersion" (esquema anterior) y todavía no hay un
+// valor guardado para la carrera actual, se migra ese valor
+// automáticamente la primera vez, sin perder información.
+
+function savePlanVersion(version){
+
+  const careerId =
+    getCurrentCareerId();
+
+  if(!careerId){
+
+    // No hay carrera seleccionada todavía (ej: durante el
+    // onboarding inicial): se guarda en la clave global legacy
+    // para no perder el dato.
+    localStorage.setItem(
+      "planVersion",
+      String(version)
+    );
+
+    return;
+
+  }
+
+  const allData =
+    getCareerData();
+
+  if(!allData[careerId]){
+
+    allData[careerId] = {
+      states:{},
+      schedules:[],
+      customEvents:[],
+      planVersion:0
+    };
+
+  }
+
+  allData[careerId].planVersion =
+    version;
+
+  saveCareerData(allData);
+
+}
+
+function getPlanVersion(){
+
+  const careerId =
+    getCurrentCareerId();
+
+  if(!careerId){
+
+    return Number(
+      localStorage.getItem("planVersion") || 0
+    );
+
+  }
+
+  const storage =
+    getCareerStorage();
+
+  if(
+    storage &&
+    typeof storage.planVersion === "number" &&
+    storage.planVersion > 0
+  ){
+
+    return storage.planVersion;
+
+  }
+
+  // Compatibilidad hacia atrás: esquema global anterior
+  // (una sola carrera, una sola versión). Si existe, se migra
+  // a la carrera actual sin perder el dato.
+  const legacy = Number(
+    localStorage.getItem("planVersion") || 0
+  );
+
+  if(legacy){
+
+    savePlanVersion(legacy);
+
+    return legacy;
+
+  }
+
+  return 0;
+
+}
+
+
+
+
+
+
+
+// =========================
 // ONBOARDING
 // =========================
 
@@ -259,11 +368,40 @@ function getCareerStorage() {
     allData[careerId] = {
       states: {},
       schedules: [],
-      customEvents: []
+      customEvents: [],
+      planVersion: 0
     };
 
     saveCareerData(allData);
   }
 
   return allData[careerId];
+}
+
+// =========================
+// TUTORIAL GUIADO (ONBOARDING)
+// =========================
+
+function saveTutorialCompleted(){
+  localStorage.setItem(
+    "tutorialCompleted",
+    "true"
+  );
+}
+
+function isTutorialCompleted(){
+  return (
+    localStorage.getItem(
+      "tutorialCompleted"
+    ) === "true"
+  );
+}
+
+function resetTutorial(){
+  localStorage.removeItem(
+    "tutorialCompleted"
+  );
+  localStorage.removeItem(
+    "onboardingCompleted"
+  );
 }

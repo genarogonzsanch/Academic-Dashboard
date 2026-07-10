@@ -581,63 +581,123 @@ document
 
 function openEventModal(date){
 
- document.getElementById(
-  "eventDate"
- ).value = date;
+  document.getElementById("eventDate").value = date;
 
- const select =
-  document.getElementById(
-   "eventMateria"
-  );
+  const input = document.getElementById("eventMateriaSearch");
+  const hidden = document.getElementById("eventMateria");
+  const results = document.getElementById("eventMateriaResults");
 
- select.innerHTML = "";
+  input.value = "";
+  hidden.value = "";
+  results.innerHTML = "";
+  results.style.display = "none";
 
- const plan =
-  getPlan();
+  const materias = [];
 
- if(plan){
+  function mostrarResultados(lista){
 
-  plan.años.forEach(anio=>{
+  results.innerHTML = "";
 
- anio.materias.forEach(materia=>{
-
-  const estado =
-   getStates()[materia.codigo] ||
-   "pendiente";
-
-  if(
-   estado !== "cursando" &&
-   estado !== "pendiente"
-  ){
-   return;
+  if(lista.length === 0){
+    results.style.display = "none";
+    return;
   }
 
-  const option =
-   document.createElement(
-    "option"
-   );
+  lista.forEach(materia=>{
 
-  option.value =
-   materia.codigo;
+    const item = document.createElement("div");
 
-  option.textContent =
-   materia.nombre;
+    item.className = "autocomplete-item";
 
-  select.appendChild(
-   option
-  );
+    item.textContent = materia.nombre;
 
- });
+    item.onclick = ()=>{
+
+      input.value = materia.nombre;
+      hidden.value = materia.codigo;
+
+      results.style.display = "none";
+
+    };
+
+    results.appendChild(item);
+
+  });
+
+  results.style.display = "block";
+
+}
+
+  const plan = getPlan();
+
+  if(plan){
+
+    plan.años.forEach(anio=>{
+
+      anio.materias.forEach(materia=>{
+
+        const estado =
+          getStates()[materia.codigo] ||
+          "pendiente";
+
+        if(
+          estado !== "cursando" &&
+          estado !== "pendiente"
+        ){
+          return;
+        }
+
+        materias.push(materia);
+
+      });
+
+    });
+
+  }
+
+input.oninput = () => {
+
+  const texto =
+    input.value.toLowerCase();
+
+  const filtradas =
+    materias.filter(m =>
+      m.nombre
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase()
+  .includes(
+    texto
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+  )
+    );
+
+  mostrarResultados(filtradas);
+
+};
+
+document.addEventListener("click", (e) => {
+
+  if(
+    !results.contains(e.target) &&
+    e.target !== input
+  ){
+    results.style.display = "none";
+  }
 
 });
 
- }
+input.onclick = () => {
 
- document.getElementById(
-  "eventModal"
- ).classList.remove(
-  "hidden"
- );
+  mostrarResultados(materias);
+
+};
+
+  document
+    .getElementById("eventModal")
+    .classList.remove("hidden");
 
 }
 function editEvent(event){
@@ -656,6 +716,18 @@ function editEvent(event){
   "eventMateria"
  ).value =
   event.materiaId;
+
+ const materia =
+  getMateriaById(
+   event.materiaId
+  );
+
+ document.getElementById(
+  "eventMateriaSearch"
+ ).value =
+  materia
+   ? materia.nombre
+   : "";
 
  document.getElementById(
   "eventDate"

@@ -67,7 +67,10 @@ function renderDashboard(plan, states) {
   </div>
 
   <div
-   class="career-card"
+   class="career-card dashboard-card-clickable"
+   id="careerCard"
+   role="button"
+   tabindex="0"
   >
 
    <div class="career-card-top">
@@ -93,10 +96,9 @@ function renderDashboard(plan, states) {
    >
 
     <div
-     class="career-progress-bar"
-     style="
-      width:${porcentaje}%"
-    ></div>
+ class="career-progress-bar"
+ data-progress="${porcentaje}"
+></div>
 
    </div>
 
@@ -182,8 +184,68 @@ function renderDashboard(plan, states) {
 
   });
 
+ const careerCard =
+  document.getElementById(
+   "careerCard"
+  );
+
+ if (careerCard) {
+
+  const goToSubjectsFromCareer = () => {
+
+   if (
+    typeof showScreen ===
+    "function"
+   ) {
+
+    showScreen("subjects");
+
+   }
+
+  };
+
+  careerCard.addEventListener(
+   "click",
+   goToSubjectsFromCareer
+  );
+
+  careerCard.addEventListener(
+   "keydown",
+   e => {
+
+    if (
+     e.key === "Enter" ||
+     e.key === " "
+    ) {
+
+     e.preventDefault();
+
+     goToSubjectsFromCareer();
+
+    }
+
+   }
+  );
+
+ }
+
  renderNextClass();
  renderUpcomingEvents();
+ const progressBar =
+ document.querySelector(
+  ".career-progress-bar"
+ );
+
+if(progressBar){
+
+ requestAnimationFrame(()=>{
+
+  progressBar.style.width =
+   progressBar.dataset.progress + "%";
+
+ });
+
+}
 }
 function formatDay(fecha) {
 
@@ -277,12 +339,54 @@ function renderNextClass() {
 
  if (!card) return;
 
+ card.classList.add(
+  "dashboard-card-clickable"
+ );
+
+ card.setAttribute("role", "button");
+ card.setAttribute("tabindex", "0");
+
+ const goToSubjects = () => {
+
+  if (
+   typeof showScreen ===
+   "function"
+  ) {
+
+   showScreen("subjects");
+
+  }
+
+ };
+
+ card.onclick = goToSubjects;
+
+ card.onkeydown = e => {
+
+  if (
+   e.key === "Enter" ||
+   e.key === " "
+  ) {
+
+   e.preventDefault();
+
+   goToSubjects();
+
+  }
+
+ };
+
  const nextClass =
   getNextClass();
 
+ const tieneHorarios =
+  typeof getSchedules === "function" &&
+  getSchedules().length > 0;
+
  if (!nextClass) {
 
-  card.innerHTML = `
+  card.innerHTML = tieneHorarios
+   ? `
 
    <h2>
     Próxima clase
@@ -290,6 +394,18 @@ function renderNextClass() {
 
    <p class="empty-state">
     No hay clases programadas
+   </p>
+
+  `
+   : `
+
+   <h2>
+    Próxima clase
+   </h2>
+
+   <p class="empty-state">
+    Todavía no configuraste tus horarios
+    de cursada. Tocá acá para configurarlos.
    </p>
 
   `;
@@ -338,6 +454,43 @@ function renderUpcomingEvents() {
   );
 
  if (!card) return;
+
+ card.classList.add(
+  "dashboard-card-clickable"
+ );
+
+ card.setAttribute("role", "button");
+ card.setAttribute("tabindex", "0");
+
+ const goToCalendar = () => {
+
+  if (
+   typeof showScreen ===
+   "function"
+  ) {
+
+   showScreen("calendar");
+
+  }
+
+ };
+
+ card.onclick = goToCalendar;
+
+ card.onkeydown = e => {
+
+  if (
+   e.key === "Enter" ||
+   e.key === " "
+  ) {
+
+   e.preventDefault();
+
+   goToCalendar();
+
+  }
+
+ };
 
  const events =
   getUpcomingEvents();

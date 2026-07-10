@@ -4,6 +4,8 @@ const AVAILABLE_PLANS = {
 
   id: "psychology",
 
+  version: 2,
+
   name: "Psicología",
 
   plan: PLAN_PSYCHOLOGY

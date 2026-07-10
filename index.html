@@ -6,42 +6,55 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Academic Dashboard</title>
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+><title>Academic Dashboard</title>
 <link rel="stylesheet" href="style.css">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="manifest" href="manifest.json">
+
+<meta name="theme-color" content="#111111">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="mobile-web-app-capable" content="yes">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="apple-mobile-web-app-title" content="Academic Dashboard">
 </head>
 <body>
 
 <header class="header">
   <h1>Academic Dashboard</h1>
 
-  <!-- <input type="file" id="jsonLoader" accept=".json"> -->
+  <button
+   id="settingsBtn"
+   type="button"
+   aria-label="Configuración"
+  >
+   ⚙️
+  </button>
 
 </header>
 
 <section id="onboarding" class="card">
 
-  <h2>Bienvenido a Academic Dashboard</h2>
+  <div class="wizard-progress">
+    <div class="wizard-progress-track">
+      <div class="wizard-progress-bar" id="wizardProgressBar"></div>
+    </div>
+    <div class="wizard-progress-label" id="wizardProgressLabel"></div>
+  </div>
 
-  <label>
-    Tu nombre
-  </label>
+  <div id="wizardStepContent"></div>
 
-  <input
-    type="text"
-    id="userName"
-    placeholder="Ingresá tu nombre"
-  >
-
-  <label>
-    Carrera
-  </label>
-
-  <select id="careerSelect"></select>
-
-  <button id="startAppBtn">
-    Comenzar
-  </button>
+  <div class="wizard-nav" id="wizardNav">
+    <button id="wizardBackBtn" type="button">Atrás</button>
+    <button id="wizardSkipBtn" type="button">Saltar</button>
+    <button id="wizardNextBtn" type="button">Comenzar</button>
+  </div>
 
 </section>
 
@@ -91,6 +104,24 @@
 
 </main>
 
+<div
+ id="updateBanner"
+ class="update-banner hidden"
+>
+
+ <span class="update-banner-text">
+  ✨ Hay una nueva versión disponible.
+ </span>
+
+ <button
+  id="updateNowBtn"
+  type="button"
+ >
+  Actualizar ahora
+ </button>
+
+</div>
+
 <nav class="bottom-nav">
 
  <button class="nav-btn active" data-screen="home">
@@ -109,6 +140,62 @@
  </button>
 
 </nav>
+
+<div
+ id="settingsModal"
+ class="modal hidden"
+>
+
+ <div class="modal-content">
+
+  <div class="modal-header">
+
+   <h2>Configuración</h2>
+
+   <button
+    type="button"
+    class="modal-close"
+    aria-label="Cerrar"
+   >
+    ✕
+   </button>
+
+  </div>
+
+  <div class="modal-body">
+
+   <p>
+    Podés volver a ejecutar el tutorial
+    de bienvenida cuando quieras.
+   </p>
+
+   <button
+    id="restartTutorialBtn"
+    type="button"
+   >
+    🔁 Reiniciar tutorial
+   </button>
+
+   <button
+    id="installAppBtn"
+    type="button"
+    class="hidden"
+   >
+    📲 Instalar Academic Dashboard
+   </button>
+
+   <p
+    id="installSuccessMsg"
+    class="hidden"
+   >
+    ✅ ¡Academic Dashboard se instaló correctamente!
+   </p>
+
+  </div>
+
+ </div>
+
+</div>
 
 <div
  id="modalHorario"
@@ -406,13 +493,26 @@
 
   </select>
 
-  <label>
-   Materia
-  </label>
+<label>
+ Materia
+</label>
 
-  <select id="eventMateria">
-  </select>
+<input
+ type="text"
+ id="eventMateriaSearch"
+ placeholder="Buscar materia..."
+ autocomplete="off"
+>
 
+<input
+ type="hidden"
+ id="eventMateria"
+>
+
+<div
+ id="eventMateriaResults"
+ class="autocomplete-results"
+></div>
   <div class="form-row">
 
    <div class="form-field">
@@ -480,6 +580,8 @@
 <script src="js/plans/psychology.js"></script>
 <script src="js/plans/plans-registry/plans-registry.js"></script>
 
+<script src="js/core/migration.js"></script>
+
 <script src="js/dash/dashboard.js"></script>
 
 <script src="js/subjects/materias.js"></script>
@@ -491,4 +593,12 @@
 
 <script src="js/navigation/navigation.js"></script>
 
+<script src="js/onboarding/onboarding.js"></script>
+
+<script src="js/core/mobile.js"></script>
+
+<script src="js/core/pwa.js"></script>
+
 <script src="js/core/app.js"></script>
+</body>
+</html>

@@ -1,7 +1,30 @@
 let aniosAbiertos = {};
-function renderMaterias(plan, states) {
 
-  const c = document.getElementById("materias");
+function aprobarAnio(anio, states){
+
+  anio.materias.forEach(m => {
+    states[m.codigo] = "aprobada";
+  });
+
+  saveStates(states);
+
+}
+
+function reiniciarAnio(anio, states){
+
+  anio.materias.forEach(m => {
+    states[m.codigo] = "pendiente";
+  });
+
+  saveStates(states);
+
+}
+
+function renderMaterias(plan, states, containerId = "materias") {
+
+  const c = document.getElementById(containerId);
+
+  if (!c) return;
 
   c.innerHTML = "";
 
@@ -186,6 +209,25 @@ select.classList.add(
   "estado-" + e.target.value
 );
 
+          // Pequeño "rebote" visual al cambiar de estado.
+          // Puramente cosmético: no afecta el guardado ni
+          // el estado real de la materia.
+          select.classList.add(
+            "materia-state-pulse"
+          );
+
+          select.addEventListener(
+            "animationend",
+            () => {
+
+              select.classList.remove(
+                "materia-state-pulse"
+              );
+
+            },
+            { once: true }
+          );
+
           states[m.codigo] =
             e.target.value;
 
@@ -198,7 +240,8 @@ select.classList.add(
 
           renderMaterias(
             plan,
-            states
+            states,
+            containerId
           );
 
           if(
@@ -220,7 +263,8 @@ select.classList.add(
     c.appendChild(div);
 
   });
-document
+
+  c
  .querySelectorAll(
   ".anio"
  )
@@ -230,8 +274,6 @@ document
   header.addEventListener(
    "click",
    () => {
-
-    console.log("click acordeon");
 
     const numero =
  card
@@ -245,7 +287,8 @@ document
 
     renderMaterias(
      plan,
-     states
+     states,
+     containerId
     );
 
    }
@@ -253,7 +296,7 @@ document
 
  });
 
-document
+  c
  .querySelectorAll(
   ".btn-horario"
  )
@@ -290,17 +333,15 @@ document
   );
 
  });
-  
 
-  document
+
+  c
     .querySelectorAll(".btn-anio")
     .forEach(btn => {
 
       btn.addEventListener(
         "click",
         () => {
-
-          console.log("APROBAR");
 
           if (
             !confirm(
@@ -321,16 +362,7 @@ document
                 a.numero === numero
             );
 
-          anio.materias.forEach(
-            m => {
-
-              states[m.codigo] =
-                "aprobada";
-
-            }
-          );
-
-          saveStates(states);
+          aprobarAnio(anio, states);
 
           renderDashboard(
             plan,
@@ -339,7 +371,8 @@ document
 
           renderMaterias(
             plan,
-            states
+            states,
+            containerId
           );
 
           if(
@@ -356,7 +389,7 @@ document
 
     });
 
-  document
+  c
     .querySelectorAll(".btn-reset-anio")
     .forEach(btn => {
 
@@ -383,16 +416,7 @@ document
                 a.numero === numero
             );
 
-          anio.materias.forEach(
-            m => {
-
-              states[m.codigo] =
-                "pendiente";
-
-            }
-          );
-
-          saveStates(states);
+          reiniciarAnio(anio, states);
 
           renderDashboard(
             plan,
@@ -401,7 +425,8 @@ document
 
           renderMaterias(
             plan,
-            states
+            states,
+            containerId
           );
 
           if(

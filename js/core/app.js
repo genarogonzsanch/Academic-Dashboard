@@ -12,10 +12,13 @@ if (isOnboardingCompleted()) {
     AVAILABLE_PLANS[selectedCareer]
   ) {
 
+    // Resuelve el plan de la carrera seleccionada aplicando,
+    // si hace falta, la migración incremental de estructura
+    // (nuevas materias/años) sin tocar states/schedules/eventos.
     currentPlan =
-      AVAILABLE_PLANS[
+      resolvePlanForCareer(
         selectedCareer
-      ].plan;
+      );
 
   }
 
@@ -26,6 +29,17 @@ function start(plan){
   currentPlan = plan;
 
   savePlan(plan);
+
+  const career =
+    AVAILABLE_PLANS[
+      getSelectedCareer()
+    ];
+
+  if(career){
+    savePlanVersion(
+      career.version
+    );
+  }
 
   renderDashboard(
     plan,
@@ -47,72 +61,29 @@ if(currentPlan){
 
 renderCalendar();
 
-const startBtn =
- document.getElementById(
-  "startAppBtn"
- );
+function populateCareerSelect(selectEl){
 
-if(startBtn){
+  if(!selectEl) return;
 
- startBtn.addEventListener(
-  "click",
-  ()=>{
+  selectEl.innerHTML = "";
 
-   const name =
-    document
-     .getElementById(
-      "userName"
-     )
-     .value
-     .trim();
+  Object.values(
+    AVAILABLE_PLANS
+  ).forEach(plan => {
 
-   const career =
-    document
-     .getElementById(
-      "careerSelect"
-     )
-     .value;
+    const option =
+      document.createElement("option");
 
-   if(!name){
+    option.value = plan.id;
 
-    alert(
-     "Ingresá tu nombre"
-    );
+    option.textContent = plan.name;
 
-    return;
-   }
+    selectEl.appendChild(option);
 
-saveProfile({
- name
-});
-
-saveSelectedCareer(
- career
-);
-
-saveOnboardingCompleted();
-
-const plan =
- AVAILABLE_PLANS[
-  career
- ].plan;
-
-start(plan);
-
-onboarding.style.display =
- "none";
-
-appContent.style.display =
- "block";
-
-console.log(
- "Perfil guardado"
-);
- }
-
- );
+  });
 
 }
+
 const onboarding =
  document.getElementById(
   "onboarding"
@@ -122,9 +93,14 @@ const appContent =
  document.getElementById(
   "appContent"
  );
+
+const tutorialAlreadyDone =
+  isTutorialCompleted() ||
+  isOnboardingCompleted();
+
 if(
  onboarding &&
- isOnboardingCompleted()
+ tutorialAlreadyDone
 ){
 
  onboarding.style.display =
@@ -133,39 +109,188 @@ if(
  appContent.style.display =
   "block";
 
-}else{
+}else if(onboarding){
 
  appContent.style.display =
   "none";
 
+ if(
+  typeof initOnboardingWizard ===
+  "function"
+ ){
+
+  initOnboardingWizard();
+
+ }
+
 }
 
-const careerSelect =
- document.getElementById(
-  "careerSelect"
+document
+ .getElementById("settingsBtn")
+ ?.addEventListener(
+  "click",
+  () => {
+
+   document
+    .getElementById("settingsModal")
+    ?.classList.remove("hidden");
+
+  }
  );
 
-if(careerSelect){
+document
+ .getElementById("restartTutorialBtn")
+ ?.addEventListener(
+  "click",
+  () => {
 
- Object.values(
-  AVAILABLE_PLANS
- ).forEach(plan=>{
+   if(
+    confirm(
+     "¿Reiniciar el tutorial de bienvenida?"
+    )
+   ){
 
-  const option =
-   document.createElement(
-    "option"
-   );
+    resetTutorial();
 
-  option.value =
-   plan.id;
+    location.reload();
 
-  option.textContent =
-   plan.name;
+   }
 
-  careerSelect.appendChild(
-   option
-  );
+  }
+ );
 
- });
+// ================================
+// PWA - Registrar Service Worker
+// ================================
+//
+// Además de registrar el Service Worker, se detecta cuando
+// hay una versión nueva instalada y esperando, y se muestra
+// el banner "Hay una nueva versión disponible". Al confirmar,
+// se activa esa versión y se recarga: como el Service Worker
+// solo cachea archivos estáticos (nunca localStorage), y el
+// plan ya migra su estructura de forma incremental al iniciar
+// (ver migration.js), el usuario no pierde ningún dato.
+
+function showUpdateBanner(registration){
+
+    console.log(">>> showUpdateBanner fue llamada");
+
+  const banner =
+    document.getElementById("updateBanner");
+
+  if(!banner) return;
+
+  banner.classList.remove("hidden");
+
+  const updateBtn =
+    document.getElementById("updateNowBtn");
+
+  if(updateBtn){
+
+    updateBtn.onclick = () => {
+
+      updateBtn.disabled = true;
+
+      if(registration.waiting){
+
+        registration.waiting.postMessage({
+          type: "SKIP_WAITING"
+        });
+
+      }
+
+    };
+
+  }
+
+}
+
+if ("serviceWorker" in navigator) {
+
+  window.addEventListener("load", async () => {
+
+    try {
+
+      const registration =
+        await navigator.serviceWorker.register(
+          "js/sw/sw.js"
+        );
+
+      console.log("✅ Service Worker registrado");
+
+      // Ya había una versión nueva esperando desde antes
+      // de que se cargara esta pestaña.
+      console.log("WAITING:", registration.waiting);
+console.log("CONTROLLER:", navigator.serviceWorker.controller);
+
+if(
+  registration.waiting &&
+  navigator.serviceWorker.controller
+){
+
+  console.log("MOSTRANDO BANNER");
+
+  showUpdateBanner(registration);
+
+}
+
+      // Se detecta una versión nueva mientras la app está
+      // abierta (recién descargada por el navegador).
+      registration.addEventListener(
+        "updatefound",
+        () => {
+
+          const newWorker =
+            registration.installing;
+
+          if(!newWorker) return;
+
+          newWorker.addEventListener(
+            "statechange",
+            () => {
+
+              if(
+                newWorker.state === "installed" &&
+                navigator.serviceWorker.controller
+              ){
+
+                showUpdateBanner(registration);
+
+              }
+
+            }
+          );
+
+        }
+      );
+
+      // Cuando el Service Worker nuevo toma control (después
+      // de presionar "Actualizar ahora"), se recarga una sola
+      // vez para que la app quede en la última versión.
+      let refrescando = false;
+
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        () => {
+
+          if(refrescando) return;
+
+          refrescando = true;
+
+          location.reload();
+
+        }
+      );
+
+    } catch (error) {
+
+      console.error(
+        "❌ Error registrando Service Worker:",
+        error
+      );
+
+    }
+
+  });
 
 }
