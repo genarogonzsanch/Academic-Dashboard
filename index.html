@@ -70,6 +70,20 @@
    id="subjectsScreen"
    style="display:none"
   >
+
+    <section id="careerHeader"></section>
+
+    <div class="materias-search-wrap">
+
+      <input
+       type="text"
+       id="materiasSearchInput"
+       placeholder="🔍 Buscar materia..."
+       autocomplete="off"
+      >
+
+    </div>
+
     <section id="materias"></section>
   </section>
 
@@ -79,6 +93,18 @@
   >
 
     <section class="card">
+
+      <div class="calendar-view-toggle">
+
+        <button id="calendarViewMonthBtn" type="button" class="active">
+          Mes
+        </button>
+
+        <button id="calendarViewWeekBtn" type="button">
+          Semana
+        </button>
+
+      </div>
 
       <div class="calendar-header">
 
@@ -97,6 +123,66 @@
       </div>
 
       <div id="calendar"></div>
+
+    </section>
+
+  </section>
+
+  <section
+   id="classSpaceScreen"
+   style="display:none"
+  >
+
+    <section class="card">
+
+      <div class="cs-header">
+
+        <button
+         id="classSpaceBackBtn"
+         type="button"
+         aria-label="Volver"
+        >
+         ◀
+        </button>
+
+        <h2 id="classSpaceTitle">Materia</h2>
+
+      </div>
+
+    </section>
+
+    <section class="card" id="classSpaceNotes"></section>
+
+    <section class="card" id="classSpaceTasks"></section>
+
+  </section>
+
+  <section
+   id="notesSubjectsScreen"
+   style="display:none"
+  >
+
+    <section class="card">
+
+      <div class="cs-header">
+
+        <button
+         id="notesSubjectsBackBtn"
+         type="button"
+         aria-label="Volver"
+        >
+         ◀
+        </button>
+
+        <h2>Tomar notas</h2>
+
+      </div>
+
+    </section>
+
+    <section class="card">
+
+      <div id="notesSubjectsList"></div>
 
     </section>
 
@@ -135,8 +221,8 @@
  </button>
 
  <button class="nav-btn" data-screen="subjects">
-  <span aria-hidden="true">📚</span>
-  <span>Materias</span>
+  <span aria-hidden="true">🎓</span>
+  <span>Carrera</span>
  </button>
 
 </nav>
@@ -487,6 +573,10 @@
     Entrega TP
    </option>
 
+   <option value="presentacion">
+    Presentación
+   </option>
+
    <option value="personalizado">
     Personalizado
    </option>
@@ -585,6 +675,7 @@
 <script src="js/dash/dashboard.js"></script>
 
 <script src="js/subjects/materias.js"></script>
+<script src="js/subjects/class-space.js"></script>
 
 <script src="js/calendar/eventos.js"></script>
 <script src="js/calendar/calendario.js"></script>

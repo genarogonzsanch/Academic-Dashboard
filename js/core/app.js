@@ -1,3 +1,51 @@
+// =========================================================
+// TOAST — feedback no bloqueante
+// Reemplaza los alert() nativos usados al guardar horarios y
+// eventos. No cambia ninguna lógica de guardado: solo se
+// invoca en el mismo punto donde antes se llamaba a alert().
+// =========================================================
+function showToast(message, type = "success"){
+
+  let container =
+    document.getElementById("toastContainer");
+
+  if(!container){
+
+    container = document.createElement("div");
+    container.id = "toastContainer";
+    container.className = "toast-container";
+    document.body.appendChild(container);
+
+  }
+
+  const toast =
+    document.createElement("div");
+
+  toast.className =
+    `toast toast-${type}`;
+
+  toast.textContent = message;
+
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add("toast-visible");
+  });
+
+  setTimeout(() => {
+
+    toast.classList.remove("toast-visible");
+
+    toast.addEventListener(
+      "transitionend",
+      () => toast.remove(),
+      { once: true }
+    );
+
+  }, 2400);
+
+}
+
 let states = getStates();
 
 let currentPlan = null;
@@ -173,8 +221,6 @@ document
 
 function showUpdateBanner(registration){
 
-    console.log(">>> showUpdateBanner fue llamada");
-
   const banner =
     document.getElementById("updateBanner");
 
@@ -220,15 +266,10 @@ if ("serviceWorker" in navigator) {
 
       // Ya había una versión nueva esperando desde antes
       // de que se cargara esta pestaña.
-      console.log("WAITING:", registration.waiting);
-console.log("CONTROLLER:", navigator.serviceWorker.controller);
-
 if(
   registration.waiting &&
   navigator.serviceWorker.controller
 ){
-
-  console.log("MOSTRANDO BANNER");
 
   showUpdateBanner(registration);
 

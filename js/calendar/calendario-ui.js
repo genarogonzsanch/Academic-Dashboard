@@ -244,8 +244,8 @@ document
 
    }
 
-   alert(
-    "Horario guardado"
+   showToast(
+    "Horario guardado ✅"
    );
 
    closeScheduleModal();
@@ -311,7 +311,13 @@ if(event.scheduleId){
  Tipo:
  ${event.tipo}
 
- <br><br>
+ <div class="day-event-actions">
+
+ <button
+  class="open-class-space-btn"
+ >
+  📂 Ver clase
+ </button>
 
  <button
   class="edit-schedule-btn"
@@ -324,6 +330,8 @@ if(event.scheduleId){
  >
   🗑 Eliminar horario
  </button>
+
+ </div>
  `;
 
 }else{
@@ -355,7 +363,19 @@ ${
  : "🏫 Presencial"
 }
 
- <br><br>
+ <div class="day-event-actions">
+
+ ${
+  event.materiaId
+  ? `
+   <button
+    class="open-class-space-btn"
+   >
+    📂 Ver clase
+   </button>
+  `
+  : ""
+ }
 
  <button
   class="edit-event-btn"
@@ -368,6 +388,8 @@ ${
  >
   🗑 Eliminar
  </button>
+
+ </div>
  `;
 
 }
@@ -375,6 +397,38 @@ ${
    list.appendChild(
     div
    );
+
+   const openClassSpaceBtn =
+    div.querySelector(
+     ".open-class-space-btn"
+    );
+
+   if(openClassSpaceBtn){
+
+    openClassSpaceBtn
+     .addEventListener(
+      "click",
+      ()=>{
+
+       if(
+        typeof openClassSpace ===
+        "function" &&
+        event.materiaId
+       ){
+
+        closeDayEventsModal();
+
+        openClassSpace(
+         event.materiaId
+        );
+
+       }
+
+      }
+     );
+
+   }
+
    const editScheduleBtn =
  div.querySelector(
   ".edit-schedule-btn"
@@ -849,8 +903,8 @@ document
 
    }
 
-   alert(
-    "Evento guardado"
+   showToast(
+    "Evento guardado ✅"
    );
 
    closeEventModal();

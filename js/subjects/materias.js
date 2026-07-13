@@ -1,5 +1,131 @@
 let aniosAbiertos = {};
 
+// Búsqueda de materias en la pantalla principal (no afecta a
+// las listas embebidas dentro del onboarding, que no tienen
+// buscador). Reutiliza la misma normalización acento-insensible
+// que ya usa el autocompletado de materias en eventos.
+let materiasSearchQuery = "";
+
+function normalizeText(str){
+
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+}
+
+// =========================================================
+// ENCABEZADO DE CARRERA
+// Antes vivía como "career-card" dentro del dashboard; ahora
+// es lo primero que se ve al entrar a la pantalla Carrera
+// (ex "Materias"). Reutiliza las mismas clases CSS
+// (.career-card, .career-meta, etc.) que ya existían, solo
+// cambia dónde se renderiza.
+// =========================================================
+function renderCareerHeader(plan, states){
+
+  const container =
+    document.getElementById("careerHeader");
+
+  if(!container) return;
+
+  let total = 0;
+  let ap = 0;
+  let pe = 0;
+
+  plan.años.forEach(anio => {
+
+    anio.materias.forEach(materia => {
+
+      total++;
+
+      const estado =
+        states[materia.codigo] ||
+        "pendiente";
+
+      if(estado === "aprobada"){
+        ap++;
+      }else{
+        pe++;
+      }
+
+    });
+
+  });
+
+  const porcentaje =
+    total
+      ? Math.round((ap / total) * 100)
+      : 0;
+
+  container.innerHTML = `
+
+    <div class="career-card">
+
+      <div class="career-card-top">
+
+        <div>
+          <div class="career-header">
+            ${(plan.carrera || "").toUpperCase()}
+          </div>
+
+          <div class="career-status">
+            ● Activa
+          </div>
+        </div>
+
+        <div class="career-percent">
+          ${porcentaje}%
+        </div>
+
+      </div>
+
+      <div class="career-progress">
+
+        <div
+          class="career-progress-bar"
+          data-progress="${porcentaje}"
+        ></div>
+
+      </div>
+
+      <div class="career-meta">
+
+        <div class="career-meta-item">
+          <strong>${ap}</strong>
+          <span>Aprobadas</span>
+        </div>
+
+        <div class="career-meta-item">
+          <strong>${pe}</strong>
+          <span>Pendientes</span>
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+  const progressBar =
+    container.querySelector(
+      ".career-progress-bar"
+    );
+
+  if(progressBar){
+
+    requestAnimationFrame(() => {
+
+      progressBar.style.width =
+        progressBar.dataset.progress + "%";
+
+    });
+
+  }
+
+}
+
 function aprobarAnio(anio, states){
 
   anio.materias.forEach(m => {
@@ -26,11 +152,36 @@ function renderMaterias(plan, states, containerId = "materias") {
 
   if (!c) return;
 
+  if(containerId === "materias"){
+    renderCareerHeader(plan, states);
+  }
+
   c.innerHTML = "";
+
+  const query =
+    containerId === "materias"
+      ? materiasSearchQuery.trim()
+      : "";
+
+  let huboResultados = false;
 
   plan.años.forEach(anio => {
 
     const materias = anio.materias;
+
+    const materiasVisibles = query
+      ? materias.filter(m =>
+          normalizeText(m.nombre).includes(
+            normalizeText(query)
+          )
+        )
+      : materias;
+
+    if (query && materiasVisibles.length === 0) {
+      return;
+    }
+
+    huboResultados = true;
 
     const aprobadas = materias.filter(
       m => (states[m.codigo] || "pendiente") === "aprobada"
@@ -53,7 +204,10 @@ function renderMaterias(plan, states, containerId = "materias") {
     const div = document.createElement("div");
     div.className = `anio ${claseAnio}`;
 
-    if (aniosAbiertos[anio.numero]) {
+    const forzarAbierto =
+      query && materiasVisibles.length > 0;
+
+    if (aniosAbiertos[anio.numero] || forzarAbierto) {
       div.classList.add("anio-open");
     }
 
@@ -114,7 +268,8 @@ acciones.innerHTML = `
 `;
 
   if (
- !aniosAbiertos[anio.numero]
+ !aniosAbiertos[anio.numero] &&
+ !forzarAbierto
 ) {
 
  contenido.style.display =
@@ -124,7 +279,7 @@ acciones.innerHTML = `
 contenido.appendChild(
  acciones
 );
-    materias.forEach(m => {
+    materiasVisibles.forEach(m => {
 
       const estado =
         states[m.codigo] || "pendiente";
@@ -184,6 +339,12 @@ contenido.appendChild(
               `
               : ""
           }
+
+          <button
+            class="btn-class-space"
+            data-id="${m.codigo}">
+            📂 Clase
+          </button>
 
         </div>
       `;
@@ -264,6 +425,17 @@ select.classList.add(
 
   });
 
+  if (query && !huboResultados) {
+
+    c.innerHTML = `
+      <p class="empty-state materias-empty-search">
+        No encontramos materias para
+        "${query}".
+      </p>
+    `;
+
+  }
+
   c
  .querySelectorAll(
   ".anio"
@@ -326,6 +498,37 @@ select.classList.add(
       openScheduleModal(
        materia
       );
+
+    }
+
+   }
+  );
+
+ });
+
+  c
+ .querySelectorAll(
+  ".btn-class-space"
+ )
+ .forEach(btn => {
+
+  btn.addEventListener(
+   "click",
+   (e) => {
+
+    e.stopPropagation();
+
+    const codigo =
+     btn.dataset.id;
+
+    if(
+     typeof openClassSpace ===
+     "function"
+    ){
+
+     openClassSpace(
+      codigo
+     );
 
     }
 
@@ -444,3 +647,33 @@ select.classList.add(
     });
 
    }
+
+/* =========================================================
+   BUSCADOR DE MATERIAS
+   Filtra por nombre (acento-insensible) sobre la pantalla
+   principal de Materias. No afecta al onboarding, que no
+   tiene input de búsqueda.
+========================================================= */
+document
+ .getElementById("materiasSearchInput")
+ ?.addEventListener(
+  "input",
+  e => {
+
+   materiasSearchQuery = e.target.value;
+
+   if(
+    typeof currentPlan !== "undefined" &&
+    currentPlan
+   ){
+
+    renderMaterias(
+     currentPlan,
+     states,
+     "materias"
+    );
+
+   }
+
+  }
+ );

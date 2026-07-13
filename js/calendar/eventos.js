@@ -4,6 +4,7 @@ const EVENT_TYPES = {
  FINAL: "final",
  RECUPERATORIO: "recuperatorio",
  TP: "tp",
+ PRESENTACION: "presentacion",
  SUSPENDIDA: "suspendida",
  PERSONALIZADO: "personalizado"
 };

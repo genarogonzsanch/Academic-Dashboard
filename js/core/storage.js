@@ -1,18 +1,44 @@
 // =========================
+// CLAVES DE LOCALSTORAGE
+// =========================
+const STORAGE_KEYS = {
+ PLAN: "planActual",
+ EVENT_OVERRIDES: "eventOverrides",
+ PROFILE: "profile",
+ SELECTED_CAREER: "selectedCareer",
+ PLAN_VERSION: "planVersion",
+ ONBOARDING_COMPLETED: "onboardingCompleted",
+ CAREER_DATA: "careerData",
+ TUTORIAL_COMPLETED: "tutorialCompleted"
+};
+
+// =========================
 // PLAN DE ESTUDIOS
 // =========================
 
+// Parseo seguro: si el JSON está corrupto, devuelve el
+// fallback en lugar de tirar abajo toda la app. Solo atrapa
+// fallos de JSON.parse, ningún otro tipo de error.
+function _safeJSONParse(raw, fallback){
+ try{
+  return JSON.parse(raw);
+ }catch(e){
+  return fallback;
+ }
+}
+
 function savePlan(plan){
  localStorage.setItem(
-  "planActual",
+  STORAGE_KEYS.PLAN,
   JSON.stringify(plan)
  );
 }
 
 function getPlan(){
- return JSON.parse(
-  localStorage.getItem("planActual")
-  || "null"
+ return _safeJSONParse(
+  localStorage.getItem(STORAGE_KEYS.PLAN)
+  || "null",
+  null
  );
 }
 
@@ -39,7 +65,8 @@ function saveStates(states){
       states:{},
       schedules:[],
       customEvents:[],
-      planVersion:0
+      planVersion:0,
+      classSpaces:{}
     };
 
   }
@@ -86,7 +113,8 @@ function saveSchedules(schedules){
       states:{},
       schedules:[],
       customEvents:[],
-      planVersion:0
+      planVersion:0,
+      classSpaces:{}
     };
 
   }
@@ -116,15 +144,16 @@ function getSchedules(){
 
 function saveOverrides(overrides){
  localStorage.setItem(
-  "eventOverrides",
+  STORAGE_KEYS.EVENT_OVERRIDES,
   JSON.stringify(overrides)
  );
 }
 
 function getOverrides(){
- return JSON.parse(
-  localStorage.getItem("eventOverrides")
-  || "[]"
+ return _safeJSONParse(
+  localStorage.getItem(STORAGE_KEYS.EVENT_OVERRIDES)
+  || "[]",
+  []
  );
 }
 
@@ -150,7 +179,8 @@ function saveCustomEvents(events){
       states:{},
       schedules:[],
       customEvents:[],
-      planVersion:0
+      planVersion:0,
+      classSpaces:{}
     };
 
   }
@@ -180,15 +210,16 @@ function getCustomEvents(){
 
 function saveProfile(profile){
   localStorage.setItem(
-    "profile",
+    STORAGE_KEYS.PROFILE,
     JSON.stringify(profile)
   );
 }
 
 function getProfile(){
-  return JSON.parse(
-    localStorage.getItem("profile")
-    || "null"
+  return _safeJSONParse(
+    localStorage.getItem(STORAGE_KEYS.PROFILE)
+    || "null",
+    null
   );
 }
 
@@ -198,14 +229,14 @@ function getProfile(){
 
 function saveSelectedCareer(career){
   localStorage.setItem(
-    "selectedCareer",
+    STORAGE_KEYS.SELECTED_CAREER,
     career
   );
 }
 
 function getSelectedCareer(){
   return localStorage.getItem(
-    "selectedCareer"
+    STORAGE_KEYS.SELECTED_CAREER
   );
 }
 
@@ -235,7 +266,7 @@ function savePlanVersion(version){
     // onboarding inicial): se guarda en la clave global legacy
     // para no perder el dato.
     localStorage.setItem(
-      "planVersion",
+      STORAGE_KEYS.PLAN_VERSION,
       String(version)
     );
 
@@ -252,7 +283,8 @@ function savePlanVersion(version){
       states:{},
       schedules:[],
       customEvents:[],
-      planVersion:0
+      planVersion:0,
+      classSpaces:{}
     };
 
   }
@@ -272,7 +304,7 @@ function getPlanVersion(){
   if(!careerId){
 
     return Number(
-      localStorage.getItem("planVersion") || 0
+      localStorage.getItem(STORAGE_KEYS.PLAN_VERSION) || 0
     );
 
   }
@@ -294,7 +326,7 @@ function getPlanVersion(){
   // (una sola carrera, una sola versión). Si existe, se migra
   // a la carrera actual sin perder el dato.
   const legacy = Number(
-    localStorage.getItem("planVersion") || 0
+    localStorage.getItem(STORAGE_KEYS.PLAN_VERSION) || 0
   );
 
   if(legacy){
@@ -321,7 +353,7 @@ function getPlanVersion(){
 
 function saveOnboardingCompleted(){
   localStorage.setItem(
-    "onboardingCompleted",
+    STORAGE_KEYS.ONBOARDING_COMPLETED,
     "true"
   );
 }
@@ -329,21 +361,22 @@ function saveOnboardingCompleted(){
 function isOnboardingCompleted(){
   return (
     localStorage.getItem(
-      "onboardingCompleted"
+      STORAGE_KEYS.ONBOARDING_COMPLETED
     ) === "true"
   );
 }
 
 function getCareerData() {
-  return JSON.parse(
-    localStorage.getItem("careerData")
-    || "{}"
+  return _safeJSONParse(
+    localStorage.getItem(STORAGE_KEYS.CAREER_DATA)
+    || "{}",
+    {}
   );
 }
 
 function saveCareerData(data) {
   localStorage.setItem(
-    "careerData",
+    STORAGE_KEYS.CAREER_DATA,
     JSON.stringify(data)
   );
 }
@@ -369,7 +402,8 @@ function getCareerStorage() {
       states: {},
       schedules: [],
       customEvents: [],
-      planVersion: 0
+      planVersion: 0,
+      classSpaces: {}
     };
 
     saveCareerData(allData);
@@ -379,12 +413,93 @@ function getCareerStorage() {
 }
 
 // =========================
+// CLASS SPACE (por materia)
+// =========================
+//
+// Un Class Space = una materia (no un horario). Guarda info
+// (docente/aula/modalidad), notas, checklist de próxima clase
+// y materiales, todo indexado por materiaId dentro de la misma
+// carrera actual (mismo patrón que states/schedules/customEvents).
+
+function getClassSpaces(){
+
+  const storage =
+    getCareerStorage();
+
+  if(!storage){
+    return {};
+  }
+
+  return storage.classSpaces || {};
+
+}
+
+function saveClassSpaces(classSpaces){
+
+  const allData =
+    getCareerData();
+
+  const careerId =
+    getCurrentCareerId();
+
+  if(!careerId){
+    return;
+  }
+
+  if(!allData[careerId]){
+
+    allData[careerId] = {
+      states:{},
+      schedules:[],
+      customEvents:[],
+      planVersion:0,
+      classSpaces:{}
+    };
+
+  }
+
+  allData[careerId].classSpaces =
+    classSpaces;
+
+  saveCareerData(allData);
+
+}
+
+function getClassSpace(materiaId){
+
+  const spaces =
+    getClassSpaces();
+
+  return spaces[materiaId] || {
+    notesBySession:{},
+    tasks:[]
+  };
+
+}
+
+function saveClassSpace(materiaId, data){
+
+  const spaces =
+    getClassSpaces();
+
+  spaces[materiaId] = {
+    ...getClassSpace(materiaId),
+    ...data
+  };
+
+  saveClassSpaces(spaces);
+
+  return spaces[materiaId];
+
+}
+
+// =========================
 // TUTORIAL GUIADO (ONBOARDING)
 // =========================
 
 function saveTutorialCompleted(){
   localStorage.setItem(
-    "tutorialCompleted",
+    STORAGE_KEYS.TUTORIAL_COMPLETED,
     "true"
   );
 }
@@ -392,16 +507,16 @@ function saveTutorialCompleted(){
 function isTutorialCompleted(){
   return (
     localStorage.getItem(
-      "tutorialCompleted"
+      STORAGE_KEYS.TUTORIAL_COMPLETED
     ) === "true"
   );
 }
 
 function resetTutorial(){
   localStorage.removeItem(
-    "tutorialCompleted"
+    STORAGE_KEYS.TUTORIAL_COMPLETED
   );
   localStorage.removeItem(
-    "onboardingCompleted"
+    STORAGE_KEYS.ONBOARDING_COMPLETED
   );
 }

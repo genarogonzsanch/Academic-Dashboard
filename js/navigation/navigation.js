@@ -15,6 +15,16 @@ function showScreen(screen){
    "subjectsScreen"
   );
 
+ const classSpace =
+  document.getElementById(
+   "classSpaceScreen"
+  );
+
+ const notesSubjects =
+  document.getElementById(
+   "notesSubjectsScreen"
+  );
+
  home.style.display =
   "none";
 
@@ -23,6 +33,25 @@ function showScreen(screen){
 
  subjects.style.display =
   "none";
+
+ // classSpaceScreen y notesSubjectsScreen no son pestañas de
+ // la bottom-nav, pero se ocultan cada vez que se cambia de
+ // pantalla principal para que nunca queden superpuestas (ej:
+ // usuario abre "Tomar notas" desde el Dashboard y después
+ // toca "Calendario").
+ if(classSpace){
+
+  classSpace.style.display =
+   "none";
+
+ }
+
+ if(notesSubjects){
+
+  notesSubjects.style.display =
+   "none";
+
+ }
 
  if(screen === "home"){
   home.style.display =
