@@ -10,6 +10,23 @@ DEFAULT_EVENT_HOUR: "00:00",
 MS_TO_HOURS: 1000 * 60 * 60
 };
 // =========================================================
+// ENCABEZADO DE SECCIÓN — componente único
+// Usado por "Próximos eventos", "Próxima clase" y "Tareas
+// pendientes" para que las tres tarjetas del Home compartan
+// exactamente el mismo ícono, tamaño, tipografía, peso y
+// espaciado. Solo cambia el texto e ícono recibidos.
+// =========================================================
+function _sectionHeading(icon, text){
+  return `<h2 class="section-heading"><i data-lucide="${icon}" class="icon"></i><span>${text}</span></h2>`;
+}
+
+function _refreshIcons(){
+  if(typeof lucide !== "undefined"){
+    lucide.createIcons();
+  }
+}
+
+// =========================================================
 // HELPERS COMPARTIDOS / UTILS INTERNOS
 // =========================================================
 function _buildDateTime(fecha, hora) {
@@ -215,7 +232,7 @@ _setupCardNavigation(card, () => {
 const event = events[0];
 
 card.innerHTML = `
-    <h2>Próximo evento</h2>
+    ${_sectionHeading("calendar-clock", "Próximos eventos")}
     <div class="event-list">
         <div class="event-row">
             <span class="event-dot badge-${event.tipo}"></span>
@@ -238,6 +255,9 @@ card.innerHTML = `
         </div>
     </div>
 `;
+
+_refreshIcons();
+
 }
 function renderNextClass(data) {
 const card = document.getElementById("nextClassCard");
@@ -252,15 +272,16 @@ const goToSubjects = () => {
 if (!nextClasses.length) {
     _setupCardNavigation(card, goToSubjects);
     card.innerHTML = tieneHorarios
-        ? `<h2>Próxima clase</h2><p class="empty-state">No hay clases programadas</p>`
-        : `<h2>Próxima clase</h2>
-           <p class="empty-state">Todavía no configuraste tus horarios de cursada.</p>
-           <button type="button" class="btn-cta" id="setupClassesBtn">🗓️ Configurar horarios</button>`;
+        ? `${_sectionHeading("book-open", "Próxima clase")}<p class="empty-state empty-note">No hay clases programadas</p>`
+        : `${_sectionHeading("book-open", "Próxima clase")}
+           <p class="empty-state empty-note">Todavía no configuraste tus horarios de cursada.</p>
+           <button type="button" class="btn-cta" id="setupClassesBtn"><i data-lucide="calendar-plus" class="icon"></i> Configurar horarios</button>`;
 
     card.querySelector("#setupClassesBtn")?.addEventListener("click", e => {
         e.stopPropagation();
         goToSubjects();
     });
+    _refreshIcons();
     return;
 }
 
@@ -270,7 +291,7 @@ _setupCardNavigation(card, () => {
 });
 
 card.innerHTML = `
-    <h2>Próxima clase</h2>
+    ${_sectionHeading("book-open", "Próxima clase")}
     <div class="next-class">
         <div class="next-class-main">
             <div class="next-class-subject">
@@ -287,6 +308,9 @@ card.innerHTML = `
         </div>
     </div>
 `;
+
+_refreshIcons();
+
 }
 function renderNotesCard(data) {
 const card = document.getElementById("notesCard");
@@ -303,30 +327,35 @@ const action = () => {
 _setupCardNavigation(card, action);
 
 card.innerHTML = nextClass
-    ? `<h2>Notas · ${escapeHtml(nextClass.materiaNombre)}</h2>
+    ? `<h2><i data-lucide="notebook-pen" class="icon"></i><span>Notas · ${escapeHtml(nextClass.materiaNombre)}</span></h2>
        <p class="empty-state">Accedé directo a los apuntes para esta clase.</p>
-       <button type="button" class="btn-cta" id="takeNotesBtn">📝 Tomar apuntes</button>`
-    : `<h2>Notas</h2>
+       <button type="button" class="btn-cta" id="takeNotesBtn"><i data-lucide="pencil-line" class="icon"></i> Tomar apuntes</button>`
+    : `<h2><i data-lucide="notebook-pen" class="icon"></i><span>Notas</span></h2>
        <p class="empty-state">Elegí una materia activa para tomar notas de su próxima clase.</p>
-       <button type="button" class="btn-cta" id="takeNotesBtn">📝 Tomar notas</button>`;
+       <button type="button" class="btn-cta" id="takeNotesBtn"><i data-lucide="pencil-line" class="icon"></i> Tomar notas</button>`;
 
 card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
     e.stopPropagation();
     action();
 });
+
+_refreshIcons();
+
 }
 function renderPendingTasks(data) {
 const card = document.getElementById("pendingTasksCard");
 if (!card) return;
 const nextClass = data.nextClass;
 const pendientes = data.pendientes;
-const tituloTarjeta = nextClass ? `Pendientes · ${escapeHtml(nextClass.materiaNombre)}` : "Pendientes";
+const tituloTarjeta = nextClass ? `Tareas pendientes · ${escapeHtml(nextClass.materiaNombre)}` : "Tareas pendientes";
+const heading = _sectionHeading("list-checks", tituloTarjeta);
 
 // Manejo correcto de modificadores de clase css en el elemento fijo
 card.classList.remove("dashboard-card-clickable");
 
 if (!nextClass && pendientes.length === 0) {
-    card.innerHTML = `<h2>${tituloTarjeta}</h2><p class="empty-state">No tenés tareas pendientes en tus materias activas. ✨</p>`;
+    card.innerHTML = `${heading}<p class="empty-state empty-note">No tenés tareas pendientes en tus materias activas.</p>`;
+    _refreshIcons();
     return;
 }
 
@@ -336,7 +365,8 @@ if (nextClass && pendientes.length === 0) {
     _setupCardNavigation(card, () => {
         _openNextClassSpace(nextClass);
     });
-    card.innerHTML = `<h2>${tituloTarjeta}</h2><p class="empty-state">No tenés tareas pendientes para tu próxima clase.</p>`;
+    card.innerHTML = `${heading}<p class="empty-state empty-note">No tenés tareas pendientes para tu próxima clase.</p>`;
+    _refreshIcons();
     return;
 }
 
@@ -349,7 +379,7 @@ _setupCardNavigation(card, () => {
 });
 
 card.innerHTML = `
-    <h2>${tituloTarjeta}</h2>
+    ${heading}
     <div class="cs-task-list">
         ${pendientes.map(task => {
             const tagMateria = !nextClass && task.materiaNombre ? `<span class="task-materia-tag">(${escapeHtml(task.materiaNombre)})</span>` : "";
@@ -383,4 +413,7 @@ card.querySelectorAll(".cs-task-row").forEach(row => {
         }
     });
 });
+
+_refreshIcons();
+
 }

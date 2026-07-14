@@ -195,7 +195,7 @@ function renderNotesSubjectsList(){
     <span class="notes-subject-name">
      ${escapeHtml(materia.nombre)}
     </span>
-    <span class="notes-subject-arrow">›</span>
+    <span class="notes-subject-arrow"><i data-lucide="chevron-right" class="icon"></i></span>
    </button>
 
   `)
@@ -210,6 +210,8 @@ function renderNotesSubjectsList(){
    });
 
   });
+
+ _refreshIcons();
 
 }
 
@@ -294,7 +296,7 @@ function renderClassSpaceNotes(materiaId, space){
 
   container.innerHTML = `
 
-   <h3 class="cs-section-title">📝 Notas</h3>
+   <h3 class="cs-section-title"><i data-lucide="notebook-pen" class="icon"></i>Notas</h3>
 
    <p class="cs-empty">
     Todavía no hay clases programadas para esta materia.
@@ -302,6 +304,8 @@ function renderClassSpaceNotes(materiaId, space){
    </p>
 
   `;
+
+  _refreshIcons();
 
   return;
 
@@ -320,21 +324,22 @@ function renderClassSpaceNotes(materiaId, space){
  container.innerHTML = `
 
   <h3 class="cs-section-title">
-   📝 Notas · próxima clase (${etiqueta})
+   <i data-lucide="notebook-pen" class="icon"></i>
+   Notas · próxima clase (${etiqueta})
   </h3>
 
   <div class="cs-notes-toolbar">
 
-   <button type="button" class="cs-notes-btn" data-cmd="bold">
-    <b>B</b>
+   <button type="button" class="cs-notes-btn" data-cmd="bold" aria-label="Negrita">
+    <i data-lucide="bold" class="icon"></i>
    </button>
 
-   <button type="button" class="cs-notes-btn" data-cmd="italic">
-    <i>I</i>
+   <button type="button" class="cs-notes-btn" data-cmd="italic" aria-label="Cursiva">
+    <i data-lucide="italic" class="icon"></i>
    </button>
 
-   <button type="button" class="cs-notes-btn" data-cmd="insertUnorderedList">
-    • Lista
+   <button type="button" class="cs-notes-btn" data-cmd="insertUnorderedList" aria-label="Lista">
+    <i data-lucide="list" class="icon"></i>
    </button>
 
   </div>
@@ -396,6 +401,8 @@ function renderClassSpaceNotes(materiaId, space){
   persistNotes();
 
  });
+
+ _refreshIcons();
 
 }
 
@@ -468,7 +475,7 @@ function renderClassSpaceTasks(materiaId, space){
 
  container.innerHTML = `
 
-  <h3 class="cs-section-title">✅ Tareas próxima clase</h3>
+  <h3 class="cs-section-title"><i data-lucide="list-checks" class="icon"></i>Tareas próxima clase</h3>
 
   <div class="cs-task-add">
 
@@ -478,7 +485,7 @@ function renderClassSpaceTasks(materiaId, space){
     placeholder="Nueva tarea..."
    >
 
-   <button type="button" id="csAddTaskBtn">➕</button>
+   <button type="button" id="csAddTaskBtn" aria-label="Agregar tarea"><i data-lucide="plus" class="icon"></i></button>
 
   </div>
 
@@ -523,13 +530,13 @@ function renderClassSpaceTasks(materiaId, space){
       type="button"
       class="cs-task-edit"
       aria-label="Editar tarea"
-     >✏️</button>
+     ><i data-lucide="pencil" class="icon"></i></button>
 
      <button
       type="button"
       class="cs-task-delete"
       aria-label="Eliminar tarea"
-     >🗑</button>
+     ><i data-lucide="trash-2" class="icon"></i></button>
 
     </div>
 
@@ -595,7 +602,7 @@ function renderClassSpaceTasks(materiaId, space){
 
   addClassTask(materiaId, text);
   renderClassSpaceTasks(materiaId, getClassSpace(materiaId));
-  showToast("Tarea agregada ✅");
+  showToast("Tarea agregada");
   refreshDashboardPendingTasks();
 
  }
@@ -610,6 +617,8 @@ function renderClassSpaceTasks(materiaId, space){
   }
 
  });
+
+ _refreshIcons();
 
 }
 

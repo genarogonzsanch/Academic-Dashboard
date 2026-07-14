@@ -234,7 +234,7 @@ div.innerHTML = `
       </span>
     </div>
 
-    <span class="anio-chevron">▾</span>
+    <span class="anio-chevron"><i data-lucide="chevron-down" class="icon"></i></span>
 
   </div>
 
@@ -334,7 +334,7 @@ contenido.appendChild(
                 <button
                   class="btn-horario"
                   data-id="${m.codigo}">
-                  📅 Horario
+                  <i data-lucide="calendar" class="icon"></i> Horario
                 </button>
               `
               : ""
@@ -343,7 +343,7 @@ contenido.appendChild(
           <button
             class="btn-class-space"
             data-id="${m.codigo}">
-            📂 Clase
+            <i data-lucide="folder-open" class="icon"></i> Clase
           </button>
 
         </div>
@@ -645,6 +645,10 @@ select.classList.add(
       );
 
     });
+
+   if(typeof _refreshIcons === "function"){
+    _refreshIcons();
+   }
 
    }
 

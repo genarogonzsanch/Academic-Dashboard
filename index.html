@@ -34,7 +34,7 @@
    type="button"
    aria-label="Configuración"
   >
-   ⚙️
+   <i data-lucide="settings" class="icon"></i>
   </button>
 
 </header>
@@ -75,10 +75,12 @@
 
     <div class="materias-search-wrap">
 
+      <i data-lucide="search" class="icon materias-search-icon"></i>
+
       <input
        type="text"
        id="materiasSearchInput"
-       placeholder="🔍 Buscar materia..."
+       placeholder="Buscar materia..."
        autocomplete="off"
       >
 
@@ -109,7 +111,7 @@
       <div class="calendar-header">
 
         <button id="prevMonth" aria-label="Mes anterior">
-          ◀
+          <i data-lucide="chevron-left" class="icon"></i>
         </button>
 
         <h2 id="calendarTitle">
@@ -117,7 +119,7 @@
         </h2>
 
         <button id="nextMonth" aria-label="Mes siguiente">
-          ▶
+          <i data-lucide="chevron-right" class="icon"></i>
         </button>
 
       </div>
@@ -142,7 +144,7 @@
          type="button"
          aria-label="Volver"
         >
-         ◀
+         <i data-lucide="chevron-left" class="icon"></i>
         </button>
 
         <h2 id="classSpaceTitle">Materia</h2>
@@ -171,7 +173,7 @@
          type="button"
          aria-label="Volver"
         >
-         ◀
+         <i data-lucide="chevron-left" class="icon"></i>
         </button>
 
         <h2>Tomar notas</h2>
@@ -196,7 +198,8 @@
 >
 
  <span class="update-banner-text">
-  ✨ Hay una nueva versión disponible.
+  <i data-lucide="sparkles" class="icon"></i>
+  Hay una nueva versión disponible.
  </span>
 
  <button
@@ -211,17 +214,17 @@
 <nav class="bottom-nav">
 
  <button class="nav-btn active" data-screen="home">
-  <span aria-hidden="true">🏠</span>
+  <span class="nav-icon-wrap" aria-hidden="true"><i data-lucide="home" class="icon"></i></span>
   <span>Inicio</span>
  </button>
 
  <button class="nav-btn" data-screen="calendar">
-  <span aria-hidden="true">📅</span>
+  <span class="nav-icon-wrap" aria-hidden="true"><i data-lucide="calendar" class="icon"></i></span>
   <span>Calendario</span>
  </button>
 
  <button class="nav-btn" data-screen="subjects">
-  <span aria-hidden="true">🎓</span>
+  <span class="nav-icon-wrap" aria-hidden="true"><i data-lucide="graduation-cap" class="icon"></i></span>
   <span>Carrera</span>
  </button>
 
@@ -243,7 +246,7 @@
     class="modal-close"
     aria-label="Cerrar"
    >
-    ✕
+    <i data-lucide="x" class="icon"></i>
    </button>
 
   </div>
@@ -259,7 +262,8 @@
     id="restartTutorialBtn"
     type="button"
    >
-    🔁 Reiniciar tutorial
+    <i data-lucide="rotate-ccw" class="icon"></i>
+    Reiniciar tutorial
    </button>
 
    <button
@@ -267,14 +271,16 @@
     type="button"
     class="hidden"
    >
-    📲 Instalar Academic Dashboard
+    <i data-lucide="smartphone" class="icon"></i>
+    Instalar Academic Dashboard
    </button>
 
    <p
     id="installSuccessMsg"
     class="hidden"
    >
-    ✅ ¡Academic Dashboard se instaló correctamente!
+    <i data-lucide="check-circle" class="icon"></i>
+    ¡Academic Dashboard se instaló correctamente!
    </p>
 
   </div>
@@ -301,7 +307,7 @@
     class="modal-close"
     aria-label="Cerrar"
    >
-    ✕
+    <i data-lucide="x" class="icon"></i>
    </button>
 
   </div>
@@ -317,7 +323,7 @@
  type="hidden"
  id="editingScheduleId"
 >
-  <label>📚 Materia</label>
+  <label><i data-lucide="book-open" class="icon"></i>Materia</label>
 
   <input
    id="materiaHorarioNombre"
@@ -484,7 +490,7 @@
     class="modal-close"
     aria-label="Cerrar"
    >
-    ✕
+    <i data-lucide="x" class="icon"></i>
    </button>
 
   </div>
@@ -501,7 +507,8 @@
    <button
     id="newEventBtn"
    >
-    ➕ Nuevo Evento
+    <i data-lucide="plus" class="icon"></i>
+    Nuevo Evento
    </button>
 
    <button
@@ -534,7 +541,7 @@
     class="modal-close"
     aria-label="Cerrar"
    >
-    ✕
+    <i data-lucide="x" class="icon"></i>
    </button>
 
   </div>
@@ -665,6 +672,8 @@
 </div>
 
 
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
 <script src="js/core/storage.js"></script>
 
 <script src="js/plans/psychology.js"></script>
@@ -691,5 +700,11 @@
 <script src="js/core/pwa.js"></script>
 
 <script src="js/core/app.js"></script>
+
+<script>
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
+</script>
 </body>
 </html>
