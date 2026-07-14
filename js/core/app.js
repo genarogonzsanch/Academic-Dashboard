@@ -280,8 +280,8 @@ if ("serviceWorker" in navigator) {
       // actualización jamás podía dispararse.
       const registration =
         await navigator.serviceWorker.register(
-          "sw.js"
-        );
+  "./js/sw/sw.js"
+);
 
       console.log("✅ Service Worker registrado");
 
