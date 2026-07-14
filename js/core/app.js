@@ -50,7 +50,21 @@ let states = getStates();
 
 let currentPlan = null;
 
-if (isOnboardingCompleted()) {
+// FIX (persistencia): antes acá se chequeaba únicamente
+// isOnboardingCompleted(), mientras que más abajo (bloque que
+// decide si mostrar el wizard o el contenido de la app) se
+// chequea isTutorialCompleted() || isOnboardingCompleted().
+// Si por algún motivo quedaba tutorialCompleted=true sin
+// onboardingCompleted=true, la app mostraba el contenido pero
+// nunca cargaba el plan guardado (currentPlan quedaba null),
+// dando la sensación de que "se perdieron los datos" aunque
+// siguieran intactos en localStorage. Ahora ambos chequeos
+// usan exactamente la misma fuente de verdad.
+const appAlreadySetUp =
+  isTutorialCompleted() ||
+  isOnboardingCompleted();
+
+if (appAlreadySetUp) {
 
   const selectedCareer =
     getSelectedCareer();
@@ -257,9 +271,16 @@ if ("serviceWorker" in navigator) {
 
     try {
 
+      // FIX (actualización PWA): el Service Worker vive en la
+      // raíz del proyecto ("sw.js", junto a index.html), no en
+      // "js/sw/sw.js". Con la ruta vieja el registro fallaba
+      // (o, en el mejor de los casos, el SW quedaba con un scope
+      // que no incluía la página principal), por lo que el SW
+      // nunca terminaba de controlar la app y el banner de
+      // actualización jamás podía dispararse.
       const registration =
         await navigator.serviceWorker.register(
-          "js/sw/sw.js"
+          "sw.js"
         );
 
       console.log("✅ Service Worker registrado");

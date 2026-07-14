@@ -22,6 +22,35 @@ function escapeHtml(str){
 }
 
 // =========================================================
+// FIX (Dashboard no reactivo): agregar/tildar/editar/borrar
+// una tarea desde acá (Class Space) solo volvía a renderizar
+// classSpaceTasks. La tarjeta "Pendientes" del Dashboard
+// (pendingTasksCard) quedaba desactualizada hasta salir y
+// volver a entrar a Home, porque nada la refrescaba.
+//
+// dashboard.js ya se encarga de re-renderizarse a sí mismo
+// cuando el toggle se hace desde el propio Dashboard; esto
+// cubre el caso que faltaba: cuando la mutación viene desde
+// el Class Space. Se llama solo si la tarjeta existe en el
+// DOM (el Dashboard ya se renderizó al menos una vez) y no
+// duplica lógica: reutiliza getDashboardData()/renderPendingTasks()
+// tal cual están definidas en dashboard.js.
+// =========================================================
+function refreshDashboardPendingTasks(){
+
+ if(
+  typeof getDashboardData === "function" &&
+  typeof renderPendingTasks === "function" &&
+  document.getElementById("pendingTasksCard")
+ ){
+
+  renderPendingTasks(getDashboardData());
+
+ }
+
+}
+
+// =========================================================
 // NAVEGACIÓN
 // =========================================================
 
@@ -512,6 +541,10 @@ function renderClassSpaceTasks(materiaId, space){
 
      toggleClassTask(materiaId, task.id);
      renderClassSpaceTasks(materiaId, getClassSpace(materiaId));
+     // FIX (Dashboard no reactivo): además de refrescar la
+     // lista local de tareas, se refresca la tarjeta de
+     // pendientes del Dashboard si está en el DOM.
+     refreshDashboardPendingTasks();
 
     });
 
@@ -523,6 +556,7 @@ function renderClassSpaceTasks(materiaId, space){
 
       deleteClassTask(materiaId, task.id);
       renderClassSpaceTasks(materiaId, getClassSpace(materiaId));
+      refreshDashboardPendingTasks();
 
      }
 
@@ -538,6 +572,7 @@ function renderClassSpaceTasks(materiaId, space){
 
       editClassTask(materiaId, task.id, nuevoTexto.trim());
       renderClassSpaceTasks(materiaId, getClassSpace(materiaId));
+      refreshDashboardPendingTasks();
 
      }
 
@@ -561,6 +596,7 @@ function renderClassSpaceTasks(materiaId, space){
   addClassTask(materiaId, text);
   renderClassSpaceTasks(materiaId, getClassSpace(materiaId));
   showToast("Tarea agregada ✅");
+  refreshDashboardPendingTasks();
 
  }
 
