@@ -282,9 +282,17 @@ function getNextSession(sessions){
 
 }
 
-function renderClassSpaceNotes(materiaId, space){
+// FIX (acordeón "Tomar apuntes" en Home): se agrega un tercer
+// parámetro opcional `container`. Por defecto sigue apuntando
+// a #classSpaceNotes (pantalla completa de Class Space, sin
+// cambios de comportamiento ahí). Cuando dashboard.js la llama
+// desde la tarjeta de Home, pasa su propio contenedor interno
+// para reutilizar exactamente la misma lógica de edición y
+// guardado de notas, sin duplicarla.
+function renderClassSpaceNotes(materiaId, space, container){
 
- const container =
+ container =
+  container ||
   document.getElementById("classSpaceNotes");
 
  if(!container) return;

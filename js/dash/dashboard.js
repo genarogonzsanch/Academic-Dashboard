@@ -9,6 +9,27 @@ EXAM_WINDOW_HOURS: 24,
 DEFAULT_EVENT_HOUR: "00:00",
 MS_TO_HOURS: 1000 * 60 * 60
 };
+
+// =========================================================
+// ACORDEÓN DE HOME — "Tomar apuntes" y "Tareas pendientes"
+// Guarda cuál de las dos tarjetas está abierta ("notes",
+// "tasks" o null). Es un acordeón real: abrir una cierra la
+// otra. Reemplaza la navegación previa a Class Space desde
+// estas dos tarjetas puntuales; el resto de la app (Próxima
+// clase, Carrera, selector de materias para notas) sigue
+// navegando exactamente igual que antes.
+// =========================================================
+let dashboardExpandedCard = null;
+
+function toggleDashboardAccordion(cardName){
+  dashboardExpandedCard =
+    dashboardExpandedCard === cardName ? null : cardName;
+
+  const data = getDashboardData();
+  renderNotesCard(data);
+  renderPendingTasks(data);
+}
+
 // =========================================================
 // ENCABEZADO DE SECCIÓN — componente único
 // Usado por "Próximos eventos", "Próxima clase" y "Tareas
@@ -18,6 +39,13 @@ MS_TO_HOURS: 1000 * 60 * 60
 // =========================================================
 function _sectionHeading(icon, text){
   return `<h2 class="section-heading"><i data-lucide="${icon}" class="icon"></i><span>${text}</span></h2>`;
+}
+
+// Variante del mismo encabezado con la flecha de acordeón al
+// final (mismo lenguaje visual que .anio-chevron). Solo la
+// usan las tarjetas que se abren/cierran sobre sí mismas.
+function _sectionHeadingAccordion(icon, text){
+  return `<h2 class="section-heading"><i data-lucide="${icon}" class="icon"></i><span class="dashboard-card-heading-text">${text}</span><i data-lucide="chevron-down" class="icon dashboard-card-accordion-toggle"></i></h2>`;
 }
 
 function _refreshIcons(){
@@ -52,6 +80,119 @@ action();
 function _openNextClassSpace(nextClass) {
 if (typeof openClassSpace === "function") openClassSpace(nextClass.materiaId, "home");
 }
+
+// =========================================================
+// FIX (Take notes no debe saltar de clase apenas empieza):
+// antes, "nextClass" salía siempre de getNextClasses(), que
+// solo devuelve clases cuyo horario de inicio todavía no
+// llegó (dateTime > ahora). Apenas una clase arrancaba, dejaba
+// de cumplir esa condición y el dashboard saltaba directo a la
+// siguiente clase programada, aunque el usuario siguiera
+// cursando o recién hubiera terminado la actual.
+//
+// Esta función busca, entre las clases de HOY, la última que
+// ya empezó (esté en curso o ya haya terminado) y la devuelve
+// como "clase actual" para notas. Al estar acotada a `fecha
+// === hoy`, se resetea sola a la medianoche: la tarjeta de
+// notas se queda pegada a la última clase atendida durante
+// todo el resto del día, en vez de saltar apenas empieza la
+// próxima.
+// =========================================================
+function getCurrentClassForNotes(){
+
+  const now = new Date();
+
+  const todayStr =
+    typeof formatDateYMD === "function"
+      ? formatDateYMD(now)
+      : now.toISOString().slice(0, 10);
+
+  const clasesYaIniciadasHoy = generateEvents()
+    .filter(e => e.tipo === EVENT_TYPES.CLASE && e.fecha === todayStr)
+    .map(event => ({
+      ...event,
+      dateTime: _buildDateTime(event.fecha, event.horaInicio)
+    }))
+    .filter(event => event.dateTime && event.dateTime <= now)
+    .sort((a, b) => b.dateTime - a.dateTime);
+
+  return clasesYaIniciadasHoy.length > 0
+    ? clasesYaIniciadasHoy[0]
+    : null;
+
+}
+
+// =========================================================
+// FIX (Tareas pendientes debe listar TODAS las materias):
+// antes, si había una "próxima clase", esta tarjeta mostraba
+// únicamente las tareas de esa materia y ocultaba el resto
+// hasta que no quedara ninguna clase programada. Ahora siempre
+// agrega las tareas pendientes de todas las materias
+// "cursando", sin importar la tarjeta de "Próxima clase"/
+// "Notas", y las ordena por la fecha de la próxima clase de
+// cada materia (su vencimiento implícito, ya que estas tareas
+// son "para la próxima clase").
+// =========================================================
+function getNextClassDateForMateria(materiaId){
+
+  const now = new Date();
+
+  const proxima = generateEvents()
+    .filter(e => e.materiaId === materiaId && e.tipo === EVENT_TYPES.CLASE)
+    .map(event => _buildDateTime(event.fecha, event.horaInicio))
+    .filter(dt => dt && dt > now)
+    .sort((a, b) => a - b);
+
+  return proxima.length > 0 ? proxima[0] : null;
+
+}
+
+function getAllPendingTasks(){
+
+  const allSpaces = typeof getClassSpaces === "function" ? getClassSpaces() : {};
+  const activeStates = typeof getStates === "function" ? getStates() : {};
+  const plan = typeof getPlan === "function" ? getPlan() : null;
+
+  let pendientes = [];
+
+  if (plan) {
+    plan.años.forEach(anio => {
+      anio.materias.forEach(materia => {
+        const estadoMateria = activeStates[materia.codigo] || "pendiente";
+
+        if (estadoMateria === "cursando") {
+          const space = allSpaces[materia.codigo];
+
+          if (space && space.tasks) {
+            const dueDate = getNextClassDateForMateria(materia.codigo);
+
+            const mappedTasks = space.tasks
+              .filter(t => !t.done)
+              .map(t => ({
+                ...t,
+                materiaId: materia.codigo,
+                materiaNombre: materia.nombre,
+                dueDate
+              }));
+
+            pendientes.push(...mappedTasks);
+          }
+        }
+      });
+    });
+  }
+
+  pendientes.sort((a, b) => {
+    if (!a.dueDate && !b.dueDate) return 0;
+    if (!a.dueDate) return 1;
+    if (!b.dueDate) return -1;
+    return a.dueDate - b.dueDate;
+  });
+
+  return pendientes;
+
+}
+
 // =========================================================
 // HOME / DASHBOARD ENGINE
 // =========================================================
@@ -62,49 +203,19 @@ const tieneHorarios =
     typeof getSchedules === "function" &&
     getSchedules().length > 0;
 
-let nextClass = null;
-let pendientes = [];
+// FIX (Take notes): se prioriza la clase que ya empezó hoy
+// (la más reciente) por sobre la próxima clase que todavía no
+// arrancó. Si todavía no arrancó ninguna clase hoy, se usa la
+// próxima clase, igual que antes.
+const currentClassForNotes = getCurrentClassForNotes();
 
-if (nextClasses.length > 0) {
-    nextClass = nextClasses[0];
-    
-    const space =
-        typeof getClassSpace === "function"
-            ? getClassSpace(nextClass.materiaId)
-            : null;
+const nextClass =
+    currentClassForNotes ||
+    (nextClasses.length > 0 ? nextClasses[0] : null);
 
-    pendientes = space
-        ? (space.tasks || []).filter(t => !t.done).slice(0, DASHBOARD_CONFIG.MAX_PENDING_HOME)
-        : [];
-} else {
-    const allSpaces = typeof getClassSpaces === "function" ? getClassSpaces() : {};
-    const activeStates = typeof getStates === "function" ? getStates() : {};
-    const plan = typeof getPlan === "function" ? getPlan() : null;
-
-    if (plan) {
-        plan.años.forEach(anio => {
-            anio.materias.forEach(materia => {
-                const estadoMateria = activeStates[materia.codigo] || "pendiente";
-                
-                if (estadoMateria === "cursando") {
-                    const space = allSpaces[materia.codigo];
-                    if (space && space.tasks) {
-                        const mappedTasks = space.tasks
-                            .filter(t => !t.done)
-                            .map(t => ({
-                                ...t,
-                                materiaId: materia.codigo,
-                                materiaNombre: materia.nombre
-                            }));
-                        pendientes.push(...mappedTasks);
-                    }
-                }
-            });
-        });
-        
-        pendientes = pendientes.slice(0, DASHBOARD_CONFIG.MAX_PENDING_HOME);
-    }
-}
+// FIX (Tareas pendientes): siempre agregadas de todas las
+// materias en curso, ordenadas por fecha de vencimiento.
+const pendientes = getAllPendingTasks();
 
 return {
     nextClasses,
@@ -312,79 +423,142 @@ card.innerHTML = `
 _refreshIcons();
 
 }
+// =========================================================
+// FIX (acordeón "Tomar apuntes"): la tarjeta ya no navega a
+// Class Space. Al tocarla, abre/cierra su propio editor de
+// notas ahí mismo (reutilizando renderClassSpaceNotes con un
+// contenedor propio), sin flecha de "volver" — la tarjeta
+// misma abre y cierra el contenido. El único caso que sigue
+// navegando es cuando no hay ninguna clase (ni en curso ni
+// próxima): ahí se mantiene el selector de materias existente,
+// porque no hay una sola materia obvia para abrir en el lugar.
+// =========================================================
 function renderNotesCard(data) {
 const card = document.getElementById("notesCard");
 if (!card) return;
 const nextClass = data.nextClass;
-const action = () => {
-    if (nextClass) {
-        _openNextClassSpace(nextClass);
-    } else {
+
+if (!nextClass) {
+
+    if (dashboardExpandedCard === "notes") dashboardExpandedCard = null;
+
+    card.classList.remove("dashboard-card-open");
+
+    const action = () => {
         if (typeof openNotesSubjectPicker === "function") openNotesSubjectPicker();
-    }
-};
+    };
 
-_setupCardNavigation(card, action);
+    _setupCardNavigation(card, action);
 
-card.innerHTML = nextClass
-    ? `<h2><i data-lucide="notebook-pen" class="icon"></i><span>Notas · ${escapeHtml(nextClass.materiaNombre)}</span></h2>
-       <p class="empty-state">Accedé directo a los apuntes para esta clase.</p>
-       <button type="button" class="btn-cta" id="takeNotesBtn"><i data-lucide="pencil-line" class="icon"></i> Tomar apuntes</button>`
-    : `<h2><i data-lucide="notebook-pen" class="icon"></i><span>Notas</span></h2>
+    card.innerHTML = `<h2><i data-lucide="notebook-pen" class="icon"></i><span>Notas</span></h2>
        <p class="empty-state">Elegí una materia activa para tomar notas de su próxima clase.</p>
        <button type="button" class="btn-cta" id="takeNotesBtn"><i data-lucide="pencil-line" class="icon"></i> Tomar notas</button>`;
 
-card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
-    e.stopPropagation();
-    action();
-});
+    card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
+        e.stopPropagation();
+        action();
+    });
+
+    _refreshIcons();
+    return;
+
+}
+
+const isOpen = dashboardExpandedCard === "notes";
+
+card.classList.toggle("dashboard-card-open", isOpen);
+
+_setupCardNavigation(card, () => toggleDashboardAccordion("notes"));
+
+card.innerHTML = isOpen
+    ? `${_sectionHeadingAccordion("notebook-pen", `Notas · ${escapeHtml(nextClass.materiaNombre)}`)}
+       <div class="dashboard-card-content" id="homeNotesContent"></div>`
+    : `${_sectionHeadingAccordion("notebook-pen", `Notas · ${escapeHtml(nextClass.materiaNombre)}`)}
+       <p class="empty-state">Accedé directo a los apuntes para esta clase.</p>
+       <button type="button" class="btn-cta" id="takeNotesBtn"><i data-lucide="pencil-line" class="icon"></i> Tomar apuntes</button>`;
+
+if (isOpen) {
+
+    const contentContainer = card.querySelector("#homeNotesContent");
+
+    if (
+        contentContainer &&
+        typeof renderClassSpaceNotes === "function" &&
+        typeof getClassSpace === "function"
+    ) {
+        // Evita que clickear dentro del editor (o su toolbar)
+        // cierre el acordeón, ya que el click en la tarjeta
+        // entera dispara toggleDashboardAccordion.
+        contentContainer.addEventListener("click", e => e.stopPropagation());
+
+        renderClassSpaceNotes(
+            nextClass.materiaId,
+            getClassSpace(nextClass.materiaId),
+            contentContainer
+        );
+    }
+
+} else {
+
+    card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
+        e.stopPropagation();
+        toggleDashboardAccordion("notes");
+    });
+
+}
 
 _refreshIcons();
 
 }
+// =========================================================
+// FIX (acordeón "Tareas pendientes" + todas las materias):
+// la tarjeta ya no navega a otra pantalla. Colapsada muestra
+// una vista previa (hasta MAX_PENDING_HOME), y al tocarla se
+// expande mostrando todas las tareas pendientes de todas las
+// materias en curso, ya ordenadas por fecha de vencimiento
+// (data.pendientes viene así desde getAllPendingTasks()).
+// =========================================================
 function renderPendingTasks(data) {
 const card = document.getElementById("pendingTasksCard");
 if (!card) return;
-const nextClass = data.nextClass;
 const pendientes = data.pendientes;
-const tituloTarjeta = nextClass ? `Tareas pendientes · ${escapeHtml(nextClass.materiaNombre)}` : "Tareas pendientes";
-const heading = _sectionHeading("list-checks", tituloTarjeta);
 
-// Manejo correcto de modificadores de clase css en el elemento fijo
 card.classList.remove("dashboard-card-clickable");
 
-if (!nextClass && pendientes.length === 0) {
-    card.innerHTML = `${heading}<p class="empty-state empty-note">No tenés tareas pendientes en tus materias activas.</p>`;
+if (pendientes.length === 0) {
+
+    if (dashboardExpandedCard === "tasks") dashboardExpandedCard = null;
+
+    card.classList.remove("dashboard-card-open");
+    card.onclick = null;
+    card.onkeydown = null;
+
+    card.innerHTML = `${_sectionHeading("list-checks", "Tareas pendientes")}<p class="empty-state empty-note">No tenés tareas pendientes en tus materias activas.</p>`;
     _refreshIcons();
     return;
 }
 
 card.classList.add("dashboard-card-clickable");
 
-if (nextClass && pendientes.length === 0) {
-    _setupCardNavigation(card, () => {
-        _openNextClassSpace(nextClass);
-    });
-    card.innerHTML = `${heading}<p class="empty-state empty-note">No tenés tareas pendientes para tu próxima clase.</p>`;
-    _refreshIcons();
-    return;
-}
+const isOpen = dashboardExpandedCard === "tasks";
 
-_setupCardNavigation(card, () => {
-    if (nextClass) {
-        _openNextClassSpace(nextClass);
-    } else {
-        if (typeof showScreen === "function") showScreen("subjects");
-    }
-});
+card.classList.toggle("dashboard-card-open", isOpen);
+
+_setupCardNavigation(card, () => toggleDashboardAccordion("tasks"));
+
+const visibleTasks = isOpen
+    ? pendientes
+    : pendientes.slice(0, DASHBOARD_CONFIG.MAX_PENDING_HOME);
+
+const restantes = pendientes.length - visibleTasks.length;
 
 card.innerHTML = `
-    ${heading}
+    ${_sectionHeadingAccordion("list-checks", "Tareas pendientes")}
     <div class="cs-task-list">
-        ${pendientes.map(task => {
-            const tagMateria = !nextClass && task.materiaNombre ? `<span class="task-materia-tag">(${escapeHtml(task.materiaNombre)})</span>` : "";
+        ${visibleTasks.map(task => {
+            const tagMateria = task.materiaNombre ? `<span class="task-materia-tag">(${escapeHtml(task.materiaNombre)})</span>` : "";
             return `
-                <div class="cs-task-row" data-task-id="${task.id}" data-materia-id="${task.materiaId || (nextClass ? nextClass.materiaId : '')}">
+                <div class="cs-task-row" data-task-id="${task.id}" data-materia-id="${task.materiaId}">
                     <label class="cs-task-checkbox">
                         <input type="checkbox">
                         <span class="cs-task-text">
@@ -395,6 +569,7 @@ card.innerHTML = `
                 </div>
             `;
         }).join("")}
+        ${!isOpen && restantes > 0 ? `<p class="empty-state empty-note">+${restantes} más · tocá para ver todas</p>` : ""}
     </div>
 `;
 
