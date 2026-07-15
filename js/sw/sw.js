@@ -7,12 +7,10 @@
 const CACHE_NAME = "academic-dashboard-v3";
 
 const FILES_TO_CACHE = [
-
-  "/",
-  "/index.html",
-  "/style.css",
-  "/manifest.json"
-
+  "/Academic-Dashboard/",
+  "/Academic-Dashboard/index.html",
+  "/Academic-Dashboard/style.css",
+  "/Academic-Dashboard/manifest.json"
 ];
 
 self.addEventListener("install", event => {
