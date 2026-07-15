@@ -20,13 +20,14 @@ MS_TO_HOURS: 1000 * 60 * 60
 // navegando exactamente igual que antes.
 // =========================================================
 let dashboardExpandedCard = null;
+let pendingTasksComposerOpen = false;
 
 function toggleDashboardAccordion(cardName){
   dashboardExpandedCard =
     dashboardExpandedCard === cardName ? null : cardName;
 
   const data = getDashboardData();
-  renderNotesCard(data);
+  renderNextClass(data);
   renderPendingTasks(data);
 }
 
@@ -76,9 +77,6 @@ e.preventDefault();
 action();
 }
 };
-}
-function _openNextClassSpace(nextClass) {
-if (typeof openClassSpace === "function") openClassSpace(nextClass.materiaId, "home");
 }
 
 // =========================================================
@@ -156,7 +154,7 @@ function getAllPendingTasks(){
   let pendientes = [];
 
   if (plan) {
-    plan.años.forEach(anio => {
+    (plan["años"] || []).forEach(anio => {
       anio.materias.forEach(materia => {
         const estadoMateria = activeStates[materia.codigo] || "pendiente";
 
@@ -278,8 +276,7 @@ dashboard.innerHTML = `
     </div>
     <div id="dashboardGrid" class="dashboard-grid-container context-${context}">
         <div id="nextEventCard" class="dashboard-card dashboard-card-primary dashboard-card-clickable" role="button" tabindex="0"></div>
-        <div id="nextClassCard" class="dashboard-card dashboard-card-clickable" role="button" tabindex="0"></div>
-        <div id="notesCard" class="dashboard-card dashboard-card-clickable" role="button" tabindex="0"></div>
+        <div id="nextClassCard" class="dashboard-card"></div>
         <div id="pendingTasksCard" class="dashboard-card"></div>
     </div>
 </div>
@@ -290,7 +287,6 @@ renderDashboardCards(data);
 function renderDashboardCards(data) {
 renderNextEvent(data);
 renderNextClass(data);
-renderNotesCard(data);
 renderPendingTasks(data);
 }
 function formatDay(fecha) {
@@ -375,15 +371,21 @@ const card = document.getElementById("nextClassCard");
 if (!card) return;
 const nextClasses = data.nextClasses;
 const tieneHorarios = data.tieneHorarios;
+const nextClass = nextClasses.length > 0 ? nextClasses[0] : null;
+const isNotesOpen = dashboardExpandedCard === "notes";
 
 const goToSubjects = () => {
     if (typeof showScreen === "function") showScreen("subjects");
 };
 
 if (!nextClasses.length) {
-    _setupCardNavigation(card, goToSubjects);
+    card.classList.remove("dashboard-card-clickable");
+    card.onclick = null;
+    card.onkeydown = null;
     card.innerHTML = tieneHorarios
-        ? `${_sectionHeading("book-open", "Próxima clase")}<p class="empty-state empty-note">No hay clases programadas</p>`
+        ? `${_sectionHeading("book-open", "Próxima clase")}
+           <p class="empty-state empty-note">No hay clases programadas</p>
+           <p class="empty-state empty-note">Cuando tengas una clase próxima, vas a poder tomar apuntes desde acá.</p>`
         : `${_sectionHeading("book-open", "Próxima clase")}
            <p class="empty-state empty-note">Todavía no configuraste tus horarios de cursada.</p>
            <button type="button" class="btn-cta" id="setupClassesBtn"><i data-lucide="calendar-plus" class="icon"></i> Configurar horarios</button>`;
@@ -392,15 +394,17 @@ if (!nextClasses.length) {
         e.stopPropagation();
         goToSubjects();
     });
+
+
+
     _refreshIcons();
     return;
 }
 
-const nextClass = nextClasses[0];
-_setupCardNavigation(card, () => {
-    _openNextClassSpace(nextClass);
-});
-
+card.classList.remove("dashboard-card-clickable");
+card.onclick = null;
+card.onkeydown = null;
+card.classList.toggle("dashboard-card-open", isNotesOpen);
 card.innerHTML = `
     ${_sectionHeading("book-open", "Próxima clase")}
     <div class="next-class">
@@ -418,67 +422,20 @@ card.innerHTML = `
             ${nextClass.horaInicio} - ${nextClass.horaFin}
         </div>
     </div>
+    <button type="button" class="btn-cta" id="takeNotesBtn"><i data-lucide="pencil-line" class="icon"></i> Tomar apuntes</button>
+    ${
+      isNotesOpen
+        ? `<div class="dashboard-card-content" id="homeNotesContent"></div>`
+        : ""
+    }
 `;
 
-_refreshIcons();
+card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
+    e.stopPropagation();
+    toggleDashboardAccordion("notes");
+});
 
-}
-// =========================================================
-// FIX (acordeón "Tomar apuntes"): la tarjeta ya no navega a
-// Class Space. Al tocarla, abre/cierra su propio editor de
-// notas ahí mismo (reutilizando renderClassSpaceNotes con un
-// contenedor propio), sin flecha de "volver" — la tarjeta
-// misma abre y cierra el contenido. El único caso que sigue
-// navegando es cuando no hay ninguna clase (ni en curso ni
-// próxima): ahí se mantiene el selector de materias existente,
-// porque no hay una sola materia obvia para abrir en el lugar.
-// =========================================================
-function renderNotesCard(data) {
-const card = document.getElementById("notesCard");
-if (!card) return;
-const nextClass = data.nextClass;
-
-if (!nextClass) {
-
-    if (dashboardExpandedCard === "notes") dashboardExpandedCard = null;
-
-    card.classList.remove("dashboard-card-open");
-
-    const action = () => {
-        if (typeof openNotesSubjectPicker === "function") openNotesSubjectPicker();
-    };
-
-    _setupCardNavigation(card, action);
-
-    card.innerHTML = `<h2><i data-lucide="notebook-pen" class="icon"></i><span>Notas</span></h2>
-       <p class="empty-state">Elegí una materia activa para tomar notas de su próxima clase.</p>
-       <button type="button" class="btn-cta" id="takeNotesBtn"><i data-lucide="pencil-line" class="icon"></i> Tomar notas</button>`;
-
-    card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
-        e.stopPropagation();
-        action();
-    });
-
-    _refreshIcons();
-    return;
-
-}
-
-const isOpen = dashboardExpandedCard === "notes";
-
-card.classList.toggle("dashboard-card-open", isOpen);
-
-_setupCardNavigation(card, () => toggleDashboardAccordion("notes"));
-
-card.innerHTML = isOpen
-    ? `${_sectionHeadingAccordion("notebook-pen", `Notas · ${escapeHtml(nextClass.materiaNombre)}`)}
-       <div class="dashboard-card-content" id="homeNotesContent"></div>`
-    : `${_sectionHeadingAccordion("notebook-pen", `Notas · ${escapeHtml(nextClass.materiaNombre)}`)}
-       <p class="empty-state">Accedé directo a los apuntes para esta clase.</p>
-       <button type="button" class="btn-cta" id="takeNotesBtn"><i data-lucide="pencil-line" class="icon"></i> Tomar apuntes</button>`;
-
-if (isOpen) {
-
+if (isNotesOpen) {
     const contentContainer = card.querySelector("#homeNotesContent");
 
     if (
@@ -486,9 +443,6 @@ if (isOpen) {
         typeof renderClassSpaceNotes === "function" &&
         typeof getClassSpace === "function"
     ) {
-        // Evita que clickear dentro del editor (o su toolbar)
-        // cierre el acordeón, ya que el click en la tarjeta
-        // entera dispara toggleDashboardAccordion.
         contentContainer.addEventListener("click", e => e.stopPropagation());
 
         renderClassSpaceNotes(
@@ -497,14 +451,6 @@ if (isOpen) {
             contentContainer
         );
     }
-
-} else {
-
-    card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
-        e.stopPropagation();
-        toggleDashboardAccordion("notes");
-    });
-
 }
 
 _refreshIcons();
@@ -522,8 +468,114 @@ function renderPendingTasks(data) {
 const card = document.getElementById("pendingTasksCard");
 if (!card) return;
 const pendientes = data.pendientes;
+const targetMateriaId =
+    pendientes[0]?.materiaId ||
+    data.nextClass?.materiaId ||
+    null;
 
 card.classList.remove("dashboard-card-clickable");
+
+const headerHtml = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-3);">
+        ${_sectionHeadingAccordion("list-checks", "Tareas pendientes")}
+        <button type="button" class="btn-class-space" id="addTaskBtn">
+            <i data-lucide="plus" class="icon"></i>
+            Agregar
+        </button>
+    </div>
+`;
+
+const openComposer = () => {
+    if (!targetMateriaId || typeof addClassTask !== "function") return;
+
+    pendingTasksComposerOpen = true;
+    renderPendingTasks(getDashboardData());
+
+    requestAnimationFrame(() => {
+        const input = document.getElementById("pendingTaskInput");
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    });
+};
+
+const closeComposer = () => {
+    pendingTasksComposerOpen = false;
+    renderPendingTasks(getDashboardData());
+};
+
+const saveComposerTask = () => {
+    if (!targetMateriaId || typeof addClassTask !== "function") return;
+
+    const input = document.getElementById("pendingTaskInput");
+    const text = input ? input.value.trim() : "";
+
+    if (!text) return;
+
+    addClassTask(targetMateriaId, text);
+
+    if (typeof showToast === "function") {
+        showToast("Tarea agregada");
+    }
+
+    pendingTasksComposerOpen = false;
+
+    if (input) {
+        input.value = "";
+    }
+
+    renderPendingTasks(getDashboardData());
+
+    if (typeof renderDashboard === "function" && typeof currentPlan !== "undefined" && currentPlan) {
+        renderDashboard(currentPlan, states);
+    }
+};
+
+const composerHtml = pendingTasksComposerOpen
+    ? `
+        <div class="cs-task-add" id="pendingTaskComposer">
+            <input type="text" id="pendingTaskInput" placeholder="Nueva tarea...">
+            <div class="cs-task-actions">
+                <button type="button" id="pendingTaskSaveBtn" aria-label="Guardar tarea">✓</button>
+                <button type="button" id="pendingTaskCancelBtn" aria-label="Cancelar">✕</button>
+            </div>
+        </div>
+    `
+    : "";
+
+const bindComposerControls = () => {
+    card.querySelector("#addTaskBtn")?.addEventListener("click", e => {
+        e.stopPropagation();
+        openComposer();
+    });
+
+    card.querySelector("#pendingTaskSaveBtn")?.addEventListener("click", e => {
+        e.stopPropagation();
+        saveComposerTask();
+    });
+
+    card.querySelector("#pendingTaskCancelBtn")?.addEventListener("click", e => {
+        e.stopPropagation();
+        closeComposer();
+    });
+
+    card.querySelector("#pendingTaskInput")?.addEventListener("click", e => {
+        e.stopPropagation();
+    });
+
+    card.querySelector("#pendingTaskInput")?.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            saveComposerTask();
+        }
+
+        if (e.key === "Escape") {
+            e.preventDefault();
+            closeComposer();
+        }
+    });
+};
 
 if (pendientes.length === 0) {
 
@@ -533,7 +585,14 @@ if (pendientes.length === 0) {
     card.onclick = null;
     card.onkeydown = null;
 
-    card.innerHTML = `${_sectionHeading("list-checks", "Tareas pendientes")}<p class="empty-state empty-note">No tenés tareas pendientes en tus materias activas.</p>`;
+    card.innerHTML = `
+        ${headerHtml}
+        ${composerHtml}
+        ${pendingTasksComposerOpen ? "" : `<p class="empty-state empty-note">No tenés tareas pendientes en tus materias activas.</p>`}
+    `;
+
+    bindComposerControls();
+
     _refreshIcons();
     return;
 }
@@ -553,7 +612,8 @@ const visibleTasks = isOpen
 const restantes = pendientes.length - visibleTasks.length;
 
 card.innerHTML = `
-    ${_sectionHeadingAccordion("list-checks", "Tareas pendientes")}
+    ${headerHtml}
+    ${composerHtml}
     <div class="cs-task-list">
         ${visibleTasks.map(task => {
             const tagMateria = task.materiaNombre ? `<span class="task-materia-tag">(${escapeHtml(task.materiaNombre)})</span>` : "";
@@ -572,6 +632,8 @@ card.innerHTML = `
         ${!isOpen && restantes > 0 ? `<p class="empty-state empty-note">+${restantes} más · tocá para ver todas</p>` : ""}
     </div>
 `;
+
+bindComposerControls();
 
 card.querySelectorAll(".cs-task-row").forEach(row => {
     const checkbox = row.querySelector("input[type=checkbox]");
@@ -592,3 +654,5 @@ card.querySelectorAll(".cs-task-row").forEach(row => {
 _refreshIcons();
 
 }
+
+

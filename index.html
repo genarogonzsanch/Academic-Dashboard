@@ -94,33 +94,45 @@
    style="display:none"
   >
 
-    <section class="card">
+    <section class="card calendar-card">
 
-      <div class="calendar-view-toggle">
+      <div class="calendar-toolbar">
 
-        <button id="calendarViewMonthBtn" type="button" class="active">
-          Mes
-        </button>
+        <div class="calendar-toolbar-left">
 
-        <button id="calendarViewWeekBtn" type="button">
-          Semana
-        </button>
+          <button id="todayBtn" type="button" class="btn-today">
+            Hoy
+          </button>
 
-      </div>
+          <div class="calendar-nav">
 
-      <div class="calendar-header">
+            <button id="prevMonth" aria-label="Mes anterior">
+              <i data-lucide="chevron-left" class="icon"></i>
+            </button>
 
-        <button id="prevMonth" aria-label="Mes anterior">
-          <i data-lucide="chevron-left" class="icon"></i>
-        </button>
+            <button id="nextMonth" aria-label="Mes siguiente">
+              <i data-lucide="chevron-right" class="icon"></i>
+            </button>
 
-        <h2 id="calendarTitle">
-          Calendario
-        </h2>
+          </div>
 
-        <button id="nextMonth" aria-label="Mes siguiente">
-          <i data-lucide="chevron-right" class="icon"></i>
-        </button>
+          <h2 id="calendarTitle">
+            Calendario
+          </h2>
+
+        </div>
+
+        <div class="calendar-view-toggle">
+
+          <button id="calendarViewMonthBtn" type="button" class="active">
+            Mes
+          </button>
+
+          <button id="calendarViewWeekBtn" type="button">
+            Semana
+          </button>
+
+        </div>
 
       </div>
 

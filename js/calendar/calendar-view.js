@@ -151,6 +151,27 @@ function renderWeekView(container, dayNamesShort){
 }
 
 document
+ .getElementById("todayBtn")
+ ?.addEventListener("click", () => {
+
+  const now = new Date();
+
+  if(calendarViewMode === "week"){
+
+   currentWeekStart = getWeekStart(now);
+
+  }else{
+
+   currentMonth = now.getMonth();
+   currentYear = now.getFullYear();
+
+  }
+
+  renderCalendar();
+
+ });
+
+document
  .getElementById("calendarViewMonthBtn")
  ?.addEventListener("click", () => {
 
@@ -269,59 +290,59 @@ function renderCalendar(){
   offset = 6;
  }
 
- for(
-  let i=0;
-  i<offset;
-  i++
- ){
-
-  container.appendChild(
-   document.createElement("div")
-  );
-
- }
-
- const lastDay =
-  new Date(
-   currentYear,
-   currentMonth+1,
-   0
-  ).getDate();
-
  const events =
   generateEvents();
 
  const today = new Date();
 
  const todayString =
-  `${today.getFullYear()}-${
-   String(today.getMonth()+1)
-    .padStart(2,"0")
-  }-${
-   String(today.getDate())
-    .padStart(2,"0")
-  }`;
+  formatDateYMD(today);
+
+ // FIX (rediseño estilo Google Calendar): grilla fija de 42
+ // celdas (6 semanas), en vez de un bloque de divs vacíos para
+ // completar el offset inicial + un loop de largo variable
+ // para los días del mes. Así todas las celdas tienen el mismo
+ // tamaño, el alto de la grilla no salta entre meses cortos y
+ // largos, y los días del mes anterior/siguiente se muestran
+ // atenuados (en vez de vacíos) para completar cada semana —
+ // igual que Google Calendar. No cambia qué eventos se buscan
+ // ni cómo: sigue siendo generateEvents() + e.fecha === fecha
+ // real de la celda, y el click sigue llamando a showDayEvents
+ // con esa misma fecha.
+ const TOTAL_CELLS = 42;
+
+ const gridStart =
+  new Date(
+   currentYear,
+   currentMonth,
+   1 - offset
+  );
 
  for(
-  let day=1;
-  day<=lastDay;
-  day++
+  let i=0;
+  i<TOTAL_CELLS;
+  i++
  ){
+
+  const cellDate =
+   new Date(gridStart);
+
+  cellDate.setDate(
+   gridStart.getDate() + i
+  );
+
+  const dateString =
+   formatDateYMD(cellDate);
+
+  const isOutsideMonth =
+   cellDate.getMonth() !== currentMonth;
 
   const cell =
    document.createElement("div");
 
   cell.className =
-   "calendar-day";
-
-  const dateString =
-   `${currentYear}-${
-    String(currentMonth+1)
-     .padStart(2,"0")
-   }-${
-    String(day)
-     .padStart(2,"0")
-   }`;
+   "calendar-day" +
+   (isOutsideMonth ? " calendar-day-outside" : "");
 
   if(dateString === todayString){
 
@@ -342,7 +363,7 @@ function renderCalendar(){
    `
     <div
      class="calendar-day-number">
-     ${day}
+     ${cellDate.getDate()}
     </div>
    `;
 
