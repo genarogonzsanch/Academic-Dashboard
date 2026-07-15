@@ -4,7 +4,7 @@
 // app), hace que el navegador detecte el Service Worker nuevo
 // como una versión distinta y dispare el flujo normal de
 // actualización (evento "updatefound").
-const CACHE_NAME = "academic-dashboard-v3";
+const CACHE_NAME = "academic-dashboard-v16";
 
 const FILES_TO_CACHE = [
   "/Academic-Dashboard/",
