@@ -279,9 +279,7 @@ if ("serviceWorker" in navigator) {
       // nunca terminaba de controlar la app y el banner de
       // actualización jamás podía dispararse.
       const registration =
-        await navigator.serviceWorker.register(
-  "./js/sw/sw.js"
-);
+        await navigator.serviceWorker.register("./sw.js");
 
       console.log("✅ Service Worker registrado");
 
