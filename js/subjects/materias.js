@@ -279,10 +279,72 @@ acciones.innerHTML = `
 contenido.appendChild(
  acciones
 );
+    const WEEKDAY_ABBR =
+      ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+
     materiasVisibles.forEach(m => {
 
       const estado =
         states[m.codigo] || "pendiente";
+
+      // Resumen de horario y próximo evento — visibles sin
+      // clics adicionales. Reutiliza getSchedules()/
+      // generateEvents()/eventTypeLabel(), ya definidas en
+      // calendario.js/eventos.js/class-space.js; no agrega
+      // storage ni lógica de negocio nueva.
+      const scheduleResumen = (() => {
+
+        if(typeof getSchedules !== "function") return "";
+
+        const propios =
+          getSchedules().filter(s => s.materiaId === m.codigo);
+
+        if(propios.length === 0) return "";
+
+        const primero = propios[0];
+
+        const resumen =
+          `${WEEKDAY_ABBR[primero.weekday]} ${primero.startTime}hs`;
+
+        return propios.length > 1
+          ? `${resumen} (+${propios.length - 1})`
+          : resumen;
+
+      })();
+
+      const proximoEventoResumen = (() => {
+
+        if(typeof generateEvents !== "function") return "";
+
+        const todayStr =
+          typeof formatDateYMD === "function"
+            ? formatDateYMD(new Date())
+            : new Date().toISOString().slice(0, 10);
+
+        const proximo = generateEvents()
+          .filter(e =>
+            e.materiaId === m.codigo &&
+            typeof EVENT_TYPES !== "undefined" &&
+            e.tipo !== EVENT_TYPES.CLASE &&
+            e.fecha >= todayStr
+          )
+          .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+
+        if(!proximo) return "";
+
+        const etiqueta =
+          typeof eventTypeLabel === "function"
+            ? eventTypeLabel(proximo.tipo)
+            : proximo.tipo;
+
+        const fecha =
+          typeof formatFechaLarga === "function"
+            ? formatFechaLarga(proximo.fecha)
+            : proximo.fecha;
+
+        return `${etiqueta} · ${fecha}`;
+
+      })();
 
       const item =
         document.createElement("div");
@@ -299,6 +361,20 @@ contenido.appendChild(
             ·
             ${m.cargaHoraria} hs
           </div>
+
+          ${
+            scheduleResumen || proximoEventoResumen
+              ? `
+                <div class="materia-meta">
+                  ${
+                    [scheduleResumen, proximoEventoResumen]
+                      .filter(Boolean)
+                      .join(" · ")
+                  }
+                </div>
+              `
+              : ""
+          }
 
           <div class="materia-correlativas">
             Correlativas:
@@ -350,6 +426,30 @@ contenido.appendChild(
       `;
 
       contenido.appendChild(item);
+
+      // Fila completa clickeable → Class Space. Antes solo el
+      // botón chico "Clase" abría el Class Space; ahora tocar
+      // cualquier parte de la info de la materia hace lo mismo,
+      // sin agregar una función nueva (reutiliza openClassSpace
+      // tal cual ya la usa el botón). Excluido del onboarding:
+      // ahí las mismas filas se usan para marcar estado, no para
+      // navegar a otra pantalla.
+      if(containerId === "materias"){
+
+        item.classList.add("materia-clickable");
+        item.style.cursor = "pointer";
+
+        item.addEventListener("click", e => {
+
+          if(e.target.closest(".materia-acciones")) return;
+
+          if(typeof openClassSpace === "function"){
+            openClassSpace(m.codigo, "subjects");
+          }
+
+        });
+
+      }
 
       const select =
         item.querySelector("select");

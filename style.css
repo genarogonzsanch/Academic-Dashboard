@@ -926,6 +926,26 @@ select:disabled{
   color:var(--info);
 }
 
+/* Color de ícono por sección — "Próximos eventos" en rojo
+   (mismo tono que ya usan los eventos tipo examen/entrega),
+   "Próxima clase" en azul, "Tareas pendientes" en amarillo. */
+.dashboard-v2 .section-heading.heading-danger [data-lucide]{
+  color:var(--danger);
+}
+
+.dashboard-v2 .section-heading.heading-info [data-lucide]{
+  color:var(--info);
+}
+
+.dashboard-v2 .section-heading.heading-warning [data-lucide]{
+  color:var(--warning);
+}
+
+.section-heading-open .dashboard-card-accordion-toggle{
+  transform:rotate(180deg);
+  color:var(--warning);
+}
+
 .dashboard-v2 .dashboard-card p{
   color:var(--text-secondary);
   font-size:var(--text-sm);
@@ -953,8 +973,9 @@ select:disabled{
   gap:var(--space-2);
   width:100%;
   min-height:var(--control-height-sm);
-  background:var(--info);
-  color:#fff;
+  background:var(--bg-surface-3);
+  color:var(--text-primary);
+  border:1px solid var(--border-strong);
 }
 
 .next-class-list{
@@ -990,8 +1011,9 @@ select:disabled{
 .next-class-time{
   font-size:var(--text-sm);
   font-weight:var(--weight-bold);
-  color:#fff;
-  background:var(--info);
+  color:var(--text-primary);
+  background:var(--bg-surface-3);
+  border:1px solid var(--border-strong);
   padding:var(--space-2) var(--space-3);
   border-radius:var(--radius-sm);
   white-space:nowrap;
@@ -1670,8 +1692,6 @@ select:disabled{
 }
 
 .dashboard-card-clickable:hover{
-
-  border-color:var(--accent);
 
   box-shadow:var(--shadow-md);
 
@@ -2499,14 +2519,6 @@ html{
 .dashboard-grid-container.context-class #nextClassCard {
   border-left: 4px solid var(--info);
 }
-
-/* --- CONTEXTO: EXAM (Foco en la evaluación inminente < 24hs) --- */
-.dashboard-grid-container.context-exam #nextEventCard {
-  border-left: 4px solid var(--danger);
-}
-.dashboard-grid-container.context-exam #nextEventCard h2 {
-  color: var(--danger);
-}
 /* =========================================================
    COMMIT 7 — ACORDEÓN EN TARJETAS DE HOME
    "Tomar apuntes" y "Tareas pendientes" abren su contenido
@@ -2526,15 +2538,6 @@ html{
 .dashboard-card-accordion-toggle{
   color:var(--text-tertiary);
   transition:transform var(--transition-base), color var(--transition-base);
-}
-
-.dashboard-card-open{
-  border-color:var(--info);
-}
-
-.dashboard-card-open .dashboard-card-accordion-toggle{
-  transform:rotate(180deg);
-  color:var(--info);
 }
 
 .dashboard-card-content{
@@ -2564,8 +2567,4 @@ html{
   background:transparent;
   border:0;
   padding:0;
-}
-
-.dashboard-card-clickable:hover{
-  border-color:var(--info);
 }

@@ -38,17 +38,6 @@ function toggleDashboardAccordion(cardName){
 // exactamente el mismo ícono, tamaño, tipografía, peso y
 // espaciado. Solo cambia el texto e ícono recibidos.
 // =========================================================
-function _sectionHeading(icon, text){
-  return `<h2 class="section-heading"><i data-lucide="${icon}" class="icon"></i><span>${text}</span></h2>`;
-}
-
-// Variante del mismo encabezado con la flecha de acordeón al
-// final (mismo lenguaje visual que .anio-chevron). Solo la
-// usan las tarjetas que se abren/cierran sobre sí mismas.
-function _sectionHeadingAccordion(icon, text){
-  return `<h2 class="section-heading"><i data-lucide="${icon}" class="icon"></i><span class="dashboard-card-heading-text">${text}</span><i data-lucide="chevron-down" class="icon dashboard-card-accordion-toggle"></i></h2>`;
-}
-
 function _refreshIcons(){
   if(typeof lucide !== "undefined"){
     lucide.createIcons();
@@ -275,14 +264,65 @@ dashboard.innerHTML = `
         <h1>¿Qué necesitás hoy?</h1>
     </div>
     <div id="dashboardGrid" class="dashboard-grid-container context-${context}">
-        <div id="nextEventCard" class="dashboard-card dashboard-card-primary dashboard-card-clickable" role="button" tabindex="0"></div>
-        <div id="nextClassCard" class="dashboard-card"></div>
-        <div id="pendingTasksCard" class="dashboard-card"></div>
+        <div class="dashboard-card-group" id="nextEventGroup">
+            <h2 id="nextEventHeading" class="section-heading"></h2>
+            <div id="nextEventCard" class="dashboard-card dashboard-card-primary dashboard-card-clickable" role="button" tabindex="0"></div>
+        </div>
+        <div class="dashboard-card-group" id="nextClassGroup">
+            <h2 id="nextClassHeading" class="section-heading"></h2>
+            <div id="nextClassCard" class="dashboard-card"></div>
+        </div>
+        <div class="dashboard-card-group" id="pendingTasksGroup">
+            <h2 id="pendingTasksHeading" class="section-heading"></h2>
+            <div id="pendingTasksCard" class="dashboard-card"></div>
+        </div>
     </div>
 </div>
 `;
 
 renderDashboardCards(data);
+}
+// =========================================================
+// TÍTULOS DE SECCIÓN, FUERA DE LA TARJETA
+// Antes el <h2> (ícono + texto) vivía adentro de cada
+// .dashboard-card, como parte de su innerHTML. Ahora cada
+// tarjeta está envuelta en un .dashboard-card-group junto a
+// un <h2> hermano, ubicado por encima del recuadro. Cada
+// sección tiene su propio color de ícono (heading-danger /
+// heading-info / heading-warning) en vez del celeste único
+// que compartían las tres antes.
+// =========================================================
+function _setSectionHeading(headingId, icon, text, colorClass){
+
+  const heading = document.getElementById(headingId);
+
+  if(!heading) return;
+
+  heading.className =
+    "section-heading" + (colorClass ? " " + colorClass : "");
+
+  heading.innerHTML =
+    `<i data-lucide="${icon}" class="icon"></i><span>${text}</span>`;
+
+}
+
+function _setSectionHeadingAccordion(headingId, icon, text, colorClass, isOpen){
+
+  const heading = document.getElementById(headingId);
+
+  if(!heading) return;
+
+  heading.className =
+    "section-heading" +
+    (colorClass ? " " + colorClass : "") +
+    (isOpen ? " section-heading-open" : "");
+
+  heading.innerHTML = `
+    <i data-lucide="${icon}" class="icon"></i>
+    <span class="dashboard-card-heading-text">${text}</span>
+    <i data-lucide="chevron-down" class="icon dashboard-card-accordion-toggle"></i>
+  `;
+
 }
 function renderDashboardCards(data) {
 renderNextEvent(data);
@@ -323,23 +363,25 @@ dateTime: _buildDateTime(event.fecha, event.horaInicio)
 // RENDERS PARTICULARES (Llenado de contenido e interacciones)
 // =========================================================
 function renderNextEvent(data) {
+const group = document.getElementById("nextEventGroup");
 const card = document.getElementById("nextEventCard");
-if (!card) return;
+if (!card || !group) return;
 const events = data.upcomingEvents;
 if (!events.length) {
-    card.style.display = "none"; // Contracción dinámica nativa (Mantiene lógica del Commit 5)
+    group.style.display = "none"; // Contracción dinámica nativa (Mantiene lógica del Commit 5)
     return;
 }
-card.style.display = ""; 
+group.style.display = "";
+
+const event = events[0];
 
 _setupCardNavigation(card, () => {
     if (typeof showScreen === "function") showScreen("calendar");
 });
 
-const event = events[0];
+_setSectionHeading("nextEventHeading", "calendar-clock", "Próximos eventos", "heading-danger");
 
 card.innerHTML = `
-    ${_sectionHeading("calendar-clock", "Próximos eventos")}
     <div class="event-list">
         <div class="event-row">
             <span class="event-dot badge-${event.tipo}"></span>
@@ -382,12 +424,13 @@ if (!nextClasses.length) {
     card.classList.remove("dashboard-card-clickable");
     card.onclick = null;
     card.onkeydown = null;
+
+    _setSectionHeading("nextClassHeading", "book-open", "Próxima clase", "heading-info");
+
     card.innerHTML = tieneHorarios
-        ? `${_sectionHeading("book-open", "Próxima clase")}
-           <p class="empty-state empty-note">No hay clases programadas</p>
+        ? `<p class="empty-state empty-note">No hay clases programadas</p>
            <p class="empty-state empty-note">Cuando tengas una clase próxima, vas a poder tomar apuntes desde acá.</p>`
-        : `${_sectionHeading("book-open", "Próxima clase")}
-           <p class="empty-state empty-note">Todavía no configuraste tus horarios de cursada.</p>
+        : `<p class="empty-state empty-note">Todavía no configuraste tus horarios de cursada.</p>
            <button type="button" class="btn-cta" id="setupClassesBtn"><i data-lucide="calendar-plus" class="icon"></i> Configurar horarios</button>`;
 
     card.querySelector("#setupClassesBtn")?.addEventListener("click", e => {
@@ -405,10 +448,12 @@ card.classList.remove("dashboard-card-clickable");
 card.onclick = null;
 card.onkeydown = null;
 card.classList.toggle("dashboard-card-open", isNotesOpen);
+
+_setSectionHeading("nextClassHeading", "book-open", "Próxima clase", "heading-info");
+
 card.innerHTML = `
-    ${_sectionHeading("book-open", "Próxima clase")}
     <div class="next-class">
-        <div class="next-class-main">
+        <div class="next-class-main" id="nextClassMainInfo" style="cursor:pointer;">
             <div class="next-class-subject">
                 ${escapeHtml(nextClass.materiaNombre)}
             </div>
@@ -429,6 +474,13 @@ card.innerHTML = `
         : ""
     }
 `;
+
+card.querySelector("#nextClassMainInfo")?.addEventListener("click", e => {
+    e.stopPropagation();
+    if (nextClass.materiaId && typeof openClassSpace === "function") {
+        openClassSpace(nextClass.materiaId, "home");
+    }
+});
 
 card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
     e.stopPropagation();
@@ -476,8 +528,7 @@ const targetMateriaId =
 card.classList.remove("dashboard-card-clickable");
 
 const headerHtml = `
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-3);">
-        ${_sectionHeadingAccordion("list-checks", "Tareas pendientes")}
+    <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-3);">
         <button type="button" class="btn-class-space" id="addTaskBtn">
             <i data-lucide="plus" class="icon"></i>
             Agregar
@@ -585,6 +636,8 @@ if (pendientes.length === 0) {
     card.onclick = null;
     card.onkeydown = null;
 
+    _setSectionHeadingAccordion("pendingTasksHeading", "list-checks", "Tareas pendientes", "heading-warning", false);
+
     card.innerHTML = `
         ${headerHtml}
         ${composerHtml}
@@ -603,6 +656,8 @@ const isOpen = dashboardExpandedCard === "tasks";
 
 card.classList.toggle("dashboard-card-open", isOpen);
 
+_setSectionHeadingAccordion("pendingTasksHeading", "list-checks", "Tareas pendientes", "heading-warning", isOpen);
+
 _setupCardNavigation(card, () => toggleDashboardAccordion("tasks"));
 
 const visibleTasks = isOpen
@@ -616,7 +671,7 @@ card.innerHTML = `
     ${composerHtml}
     <div class="cs-task-list">
         ${visibleTasks.map(task => {
-            const tagMateria = task.materiaNombre ? `<span class="task-materia-tag">(${escapeHtml(task.materiaNombre)})</span>` : "";
+            const tagMateria = task.materiaNombre ? `<span class="task-materia-tag" data-open-materia="${task.materiaId}">(${escapeHtml(task.materiaNombre)})</span>` : "";
             return `
                 <div class="cs-task-row" data-task-id="${task.id}" data-materia-id="${task.materiaId}">
                     <label class="cs-task-checkbox">
@@ -639,6 +694,14 @@ card.querySelectorAll(".cs-task-row").forEach(row => {
     const checkbox = row.querySelector("input[type=checkbox]");
 
     checkbox.addEventListener("click", e => e.stopPropagation());
+
+    row.querySelector(".task-materia-tag")?.addEventListener("click", e => {
+        e.stopPropagation();
+        const materiaId = e.currentTarget.dataset.openMateria;
+        if (materiaId && typeof openClassSpace === "function") {
+            openClassSpace(materiaId, "home");
+        }
+    });
     checkbox.addEventListener("change", () => {
         const targetMateriaId = row.dataset.materiaId;
         if (targetMateriaId && typeof toggleClassTask === "function") {

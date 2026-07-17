@@ -232,8 +232,92 @@ function renderClassSpace(materiaId){
    materia ? materia.nombre : "Materia";
  }
 
+ renderClassSpaceMeta(materiaId, materia);
  renderClassSpaceNotes(materiaId, space);
  renderClassSpaceTasks(materiaId, space);
+
+}
+
+// =========================================================
+// METADATOS DE LA MATERIA (estado + horarios)
+// Contexto que antes solo se veía en la pantalla Carrera.
+// Se agrega acá para que, entrando a un Class Space desde
+// Home o Calendario, no haga falta volver a Carrera para
+// saber si la materia está cursando/aprobada/pendiente o si
+// ya tiene un horario cargado. Reutiliza getStates(),
+// getSchedules() y openScheduleModal() tal cual existen, sin
+// duplicar lógica ni agregar storage nuevo.
+// =========================================================
+
+function renderClassSpaceMeta(materiaId, materia){
+
+ const container =
+  document.getElementById("classSpaceMeta");
+
+ if(!container) return;
+
+ if(!materia){
+  container.innerHTML = "";
+  return;
+ }
+
+ const states =
+  typeof getStates === "function" ? getStates() : {};
+
+ const estado = states[materiaId] || "pendiente";
+
+ const estadoLabels = {
+  pendiente: "Pendiente",
+  cursando: "Cursando",
+  aprobada: "Aprobada"
+ };
+
+ const schedules =
+  (typeof getSchedules === "function" ? getSchedules() : [])
+   .filter(s => s.materiaId === materiaId);
+
+ container.innerHTML = `
+
+  <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;margin-top:var(--space-3);">
+
+   <span class="estado-${estado}">
+    ${estadoLabels[estado] || estado}
+   </span>
+
+   <span class="materia-meta">
+    ${materia.cargaHoraria} hs
+    ${
+     schedules.length > 0
+      ? ` · ${schedules.length} horario${schedules.length > 1 ? "s" : ""} cargado${schedules.length > 1 ? "s" : ""}`
+      : " · sin horario cargado"
+    }
+   </span>
+
+  </div>
+
+  <button
+   type="button"
+   class="btn-horario"
+   id="csScheduleBtn"
+   style="margin-top:var(--space-3);"
+  >
+   <i data-lucide="calendar" class="icon"></i>
+   ${schedules.length > 0 ? "Agregar otro horario" : "Configurar horario"}
+  </button>
+
+ `;
+
+ container
+  .querySelector("#csScheduleBtn")
+  ?.addEventListener("click", () => {
+
+   if(typeof openScheduleModal === "function"){
+    openScheduleModal(materia);
+   }
+
+  });
+
+ _refreshIcons();
 
 }
 
