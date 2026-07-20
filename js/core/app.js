@@ -197,6 +197,89 @@ document
     .getElementById("settingsModal")
     ?.classList.remove("hidden");
 
+   const profileNameInput =
+    document.getElementById(
+     "profileNameInput"
+    );
+
+   if(profileNameInput){
+
+    profileNameInput.value =
+     getProfile()?.name || "";
+
+   }
+
+  }
+ );
+
+// =========================================================
+// EDITAR NOMBRE — Configuración
+// =========================================================
+//
+// Guarda en el mismo almacenamiento existente (saveProfile,
+// misma función que usa el onboarding) y refresca el dashboard
+// para que el nombre se actualice automáticamente donde se
+// muestre, sin recargar la página.
+function saveProfileNameFromSettings(){
+
+ const profileNameInput =
+  document.getElementById(
+   "profileNameInput"
+  );
+
+ const name =
+  profileNameInput?.value.trim();
+
+ if(!name){
+
+  showToast(
+   "Ingresá un nombre",
+   "error"
+  );
+
+  return;
+
+ }
+
+ saveProfile({
+  ...getProfile(),
+  name
+ });
+
+ if(currentPlan){
+
+  renderDashboard(
+   currentPlan,
+   states
+  );
+
+ }
+
+ showToast("Nombre actualizado");
+
+}
+
+document
+ .getElementById("saveProfileNameBtn")
+ ?.addEventListener(
+  "click",
+  saveProfileNameFromSettings
+ );
+
+document
+ .getElementById("profileNameInput")
+ ?.addEventListener(
+  "keydown",
+  (event) => {
+
+   if(event.key === "Enter"){
+
+    event.preventDefault();
+
+    saveProfileNameFromSettings();
+
+   }
+
   }
  );
 

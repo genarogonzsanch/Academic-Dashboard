@@ -12,6 +12,7 @@ let onboardingStepIndex = 0;
 
 let onboardingData = {
  name: "",
+ university: "uai",
  career: "psychology"
 };
 
@@ -25,12 +26,75 @@ function initOnboardingWizard(){
 
 function getOnboardingPlan(){
 
- const plan =
-  AVAILABLE_PLANS[
-   onboardingData.career
-  ];
+ return getStudyPlanForCareer(
+  onboardingData.university,
+  onboardingData.career
+ );
 
- return plan ? plan.plan : null;
+}
+
+// =========================================================
+// Universidad / Carrera (selects dependientes)
+// =========================================================
+//
+// La carrera disponible depende de la universidad elegida.
+// Cambiar la universidad vuelve a poblar el select de carrera
+// con las carreras de esa universidad (ver
+// universities-registry.js).
+
+function populateUniversitySelect(selectEl, selectedId){
+
+ if(!selectEl) return;
+
+ selectEl.innerHTML = "";
+
+ getUniversities().forEach(university => {
+
+  const option =
+   document.createElement("option");
+
+  option.value = university.id;
+
+  option.textContent = university.name;
+
+  selectEl.appendChild(option);
+
+ });
+
+ if(selectedId){
+
+  selectEl.value = selectedId;
+
+ }
+
+}
+
+function populateCareerSelectForUniversity(universityId, selectEl, selectedId){
+
+ if(!selectEl) return;
+
+ selectEl.innerHTML = "";
+
+ getCareersForUniversity(
+  universityId
+ ).forEach(career => {
+
+  const option =
+   document.createElement("option");
+
+  option.value = career.id;
+
+  option.textContent = career.name;
+
+  selectEl.appendChild(option);
+
+ });
+
+ if(selectedId){
+
+  selectEl.value = selectedId;
+
+ }
 
 }
 
@@ -146,21 +210,47 @@ function renderOnboardingStep(){
      value="${onboardingData.name}"
     >
 
+    <label>Universidad</label>
+
+    <select id="onbUniversity"></select>
+
     <label>Carrera</label>
 
     <select id="onbCareer"></select>
    `;
 
-   populateCareerSelect(
+   const universitySelect =
+    document.getElementById(
+     "onbUniversity"
+    );
+
+   const careerSelect =
     document.getElementById(
      "onbCareer"
-    )
+    );
+
+   populateUniversitySelect(
+    universitySelect,
+    onboardingData.university
    );
 
-   document.getElementById(
-    "onbCareer"
-   ).value =
-    onboardingData.career;
+   populateCareerSelectForUniversity(
+    universitySelect.value,
+    careerSelect,
+    onboardingData.career
+   );
+
+   universitySelect.addEventListener(
+    "change",
+    () => {
+
+     populateCareerSelectForUniversity(
+      universitySelect.value,
+      careerSelect
+     );
+
+    }
+   );
 
    nextBtn.textContent = "Siguiente";
 
@@ -402,6 +492,11 @@ document
       .getElementById("onbName")
       .value.trim();
 
+    const university =
+     document
+      .getElementById("onbUniversity")
+      .value;
+
     const career =
      document
       .getElementById("onbCareer")
@@ -416,9 +511,11 @@ document
     }
 
     onboardingData.name = name;
+    onboardingData.university = university;
     onboardingData.career = career;
 
     saveProfile({ name });
+    saveSelectedUniversity(university);
     saveSelectedCareer(career);
     savePlan(getOnboardingPlan());
 
@@ -465,8 +562,10 @@ document
   "click",
   () => {
 
+   onboardingData.university = "uai";
    onboardingData.career = "psychology";
 
+   saveSelectedUniversity("uai");
    saveSelectedCareer("psychology");
    savePlan(getOnboardingPlan());
 

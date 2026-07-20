@@ -306,7 +306,7 @@ function _setSectionHeading(headingId, icon, text, colorClass){
 
 }
 
-function _setSectionHeadingAccordion(headingId, icon, text, colorClass, isOpen){
+function _setSectionHeadingAccordion(headingId, icon, text, colorClass, isOpen, count){
 
   const heading = document.getElementById(headingId);
 
@@ -317,9 +317,15 @@ function _setSectionHeadingAccordion(headingId, icon, text, colorClass, isOpen){
     (colorClass ? " " + colorClass : "") +
     (isOpen ? " section-heading-open" : "");
 
+  const countBadge =
+    typeof count === "number"
+      ? `<span class="dashboard-card-heading-count">${count}</span>`
+      : "";
+
   heading.innerHTML = `
     <i data-lucide="${icon}" class="icon"></i>
     <span class="dashboard-card-heading-text">${text}</span>
+    ${countBadge}
     <i data-lucide="chevron-down" class="icon dashboard-card-accordion-toggle"></i>
   `;
 
@@ -453,7 +459,7 @@ _setSectionHeading("nextClassHeading", "book-open", "Próxima clase", "heading-i
 
 card.innerHTML = `
     <div class="next-class">
-        <div class="next-class-main" id="nextClassMainInfo" style="cursor:pointer;">
+        <div class="next-class-main" id="nextClassMainInfo">
             <div class="next-class-subject">
                 ${escapeHtml(nextClass.materiaNombre)}
             </div>
@@ -474,13 +480,6 @@ card.innerHTML = `
         : ""
     }
 `;
-
-card.querySelector("#nextClassMainInfo")?.addEventListener("click", e => {
-    e.stopPropagation();
-    if (nextClass.materiaId && typeof openClassSpace === "function") {
-        openClassSpace(nextClass.materiaId, "home");
-    }
-});
 
 card.querySelector("#takeNotesBtn")?.addEventListener("click", e => {
     e.stopPropagation();
@@ -510,22 +509,33 @@ _refreshIcons();
 }
 // =========================================================
 // FIX (acordeón "Tareas pendientes" + todas las materias):
-// la tarjeta ya no navega a otra pantalla. Colapsada muestra
-// una vista previa (hasta MAX_PENDING_HOME), y al tocarla se
-// expande mostrando todas las tareas pendientes de todas las
-// materias en curso, ya ordenadas por fecha de vencimiento
-// (data.pendientes viene así desde getAllPendingTasks()).
+// la tarjeta ya no navega a otra pantalla. El click para
+// abrir/cerrar vive en la CABECERA (#pendingTasksHeading:
+// ícono + título + contador + flecha), igual que el patrón ya
+// usado por los acordeones de años/materias (.anio-header).
+// Cerrada, la tarjeta no muestra ninguna tarea; abierta,
+// muestra todas las pendientes de todas las materias en curso,
+// ya ordenadas por fecha de vencimiento (data.pendientes viene
+// así desde getAllPendingTasks()).
+//
+// Al cerrar se sigue renderizando un contenedor ".cs-task-list"
+// vacío (en vez de vaciar la tarjeta por completo): el resto
+// del dashboard usa reglas CSS que reordenan los bloques según
+// qué contenido tienen adentro (":has(.cs-task-list)"); si esa
+// clase desaparece del todo, esas reglas dejan de matchear y
+// otros componentes (como el saludo "¿Qué necesitás hoy?")
+// cambian de posición. Mantener el contenedor vacío evita ese
+// efecto colateral sin tocar esas reglas de CSS.
 // =========================================================
 function renderPendingTasks(data) {
 const card = document.getElementById("pendingTasksCard");
+const heading = document.getElementById("pendingTasksHeading");
 if (!card) return;
 const pendientes = data.pendientes;
 const targetMateriaId =
     pendientes[0]?.materiaId ||
     data.nextClass?.materiaId ||
     null;
-
-card.classList.remove("dashboard-card-clickable");
 
 const headerHtml = `
     <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-3);">
@@ -636,6 +646,14 @@ if (pendientes.length === 0) {
     card.onclick = null;
     card.onkeydown = null;
 
+    if (heading) {
+        heading.classList.remove("section-heading-clickable");
+        heading.removeAttribute("role");
+        heading.removeAttribute("tabindex");
+        heading.onclick = null;
+        heading.onkeydown = null;
+    }
+
     _setSectionHeadingAccordion("pendingTasksHeading", "list-checks", "Tareas pendientes", "heading-warning", false);
 
     card.innerHTML = `
@@ -650,27 +668,33 @@ if (pendientes.length === 0) {
     return;
 }
 
-card.classList.add("dashboard-card-clickable");
-
 const isOpen = dashboardExpandedCard === "tasks";
 
 card.classList.toggle("dashboard-card-open", isOpen);
 
-_setSectionHeadingAccordion("pendingTasksHeading", "list-checks", "Tareas pendientes", "heading-warning", isOpen);
+_setSectionHeadingAccordion("pendingTasksHeading", "list-checks", "Tareas pendientes", "heading-warning", isOpen, pendientes.length);
 
-_setupCardNavigation(card, () => toggleDashboardAccordion("tasks"));
+if (heading) {
+    heading.classList.add("section-heading-clickable");
+    heading.setAttribute("role", "button");
+    heading.setAttribute("tabindex", "0");
+    _setupCardNavigation(heading, () => toggleDashboardAccordion("tasks"));
+}
 
-const visibleTasks = isOpen
-    ? pendientes
-    : pendientes.slice(0, DASHBOARD_CONFIG.MAX_PENDING_HOME);
+if (!isOpen) {
 
-const restantes = pendientes.length - visibleTasks.length;
+    card.innerHTML = `<div class="cs-task-list"></div>`;
+
+    _refreshIcons();
+    return;
+
+}
 
 card.innerHTML = `
     ${headerHtml}
     ${composerHtml}
     <div class="cs-task-list">
-        ${visibleTasks.map(task => {
+        ${pendientes.map(task => {
             const tagMateria = task.materiaNombre ? `<span class="task-materia-tag" data-open-materia="${task.materiaId}">(${escapeHtml(task.materiaNombre)})</span>` : "";
             return `
                 <div class="cs-task-row" data-task-id="${task.id}" data-materia-id="${task.materiaId}">
@@ -684,7 +708,6 @@ card.innerHTML = `
                 </div>
             `;
         }).join("")}
-        ${!isOpen && restantes > 0 ? `<p class="empty-state empty-note">+${restantes} más · tocá para ver todas</p>` : ""}
     </div>
 `;
 

@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
  PLAN: "planActual",
  EVENT_OVERRIDES: "eventOverrides",
  PROFILE: "profile",
+ SELECTED_UNIVERSITY: "selectedUniversity",
  SELECTED_CAREER: "selectedCareer",
  PLAN_VERSION: "planVersion",
  ONBOARDING_COMPLETED: "onboardingCompleted",
@@ -220,6 +221,23 @@ function getProfile(){
     localStorage.getItem(STORAGE_KEYS.PROFILE)
     || "null",
     null
+  );
+}
+
+// =========================
+// UNIVERSIDAD SELECCIONADA
+// =========================
+
+function saveSelectedUniversity(university){
+  localStorage.setItem(
+    STORAGE_KEYS.SELECTED_UNIVERSITY,
+    university
+  );
+}
+
+function getSelectedUniversity(){
+  return localStorage.getItem(
+    STORAGE_KEYS.SELECTED_UNIVERSITY
   );
 }
 
