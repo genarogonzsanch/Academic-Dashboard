@@ -226,7 +226,7 @@ div.innerHTML = `
 
   <div class="anio-header-right">
 
-    <div class="anio-stats">
+    <div class="anio-stats${aprobadas === materias.length ? " anio-stats-complete" : ""}">
       <span>
         ${Math.round(
           (aprobadas / materias.length) * 100

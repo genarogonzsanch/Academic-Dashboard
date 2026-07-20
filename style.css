@@ -202,6 +202,8 @@ select:focus-visible,
   width:100%;
   margin:var(--space-5) auto;
   padding:0 var(--space-5) 100px;
+  overflow-x:clip;
+  touch-action:pan-y;
 }
 
 @media(min-width:900px){
@@ -214,6 +216,59 @@ select:focus-visible,
 #calendarScreen,
 #subjectsScreen{
   animation:fadeIn var(--transition-base) ease both;
+}
+
+#homeScreen{ z-index:1; }
+#calendarScreen{ z-index:2; }
+#subjectsScreen{ z-index:3; }
+
+.screen-transitioning{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  animation:none !important;
+  pointer-events:none;
+  will-change:transform, opacity;
+}
+
+.screen-transition-active{
+  transition:transform 240ms cubic-bezier(.4,0,.2,1),
+             opacity 240ms cubic-bezier(.4,0,.2,1);
+}
+
+.screen-enter-forward{
+  transform:translate3d(100%,0,0);
+  opacity:.94;
+}
+
+.screen-enter-forward.screen-transition-active{
+  transform:translate3d(0,0,0);
+  opacity:1;
+}
+
+.screen-exit-forward.screen-transition-active{
+  transform:translate3d(-18%,0,0);
+  opacity:.72;
+}
+
+.screen-enter-back{
+  transform:translate3d(-18%,0,0);
+  opacity:.72;
+}
+
+.screen-enter-back.screen-transition-active{
+  transform:translate3d(0,0,0);
+  opacity:1;
+}
+
+.screen-exit-back.screen-transition-active{
+  transform:translate3d(100%,0,0);
+  opacity:.94;
+}
+
+.screen-swipe-active{
+  user-select:none;
 }
 
 .header{
@@ -377,10 +432,14 @@ select:focus-visible,
 }
 
 .anio-stats{
-  color:var(--accent);
+  color:var(--warning);
   font-size:var(--text-xl);
   font-weight:var(--weight-black);
   line-height:1;
+}
+
+.anio-stats-complete{
+  color:var(--success);
 }
 
 .anio-acciones{
@@ -715,7 +774,7 @@ select:disabled{
   background:none;
   border:none;
   border-radius:0;
-  color:var(--text-tertiary);
+  color:var(--success);
   display:flex;
   flex-direction:column;
   justify-content:center;
@@ -742,16 +801,16 @@ select:disabled{
 }
 
 .nav-btn:hover .nav-icon-wrap{
-  color:var(--accent);
+  color:var(--success);
 }
 
 .nav-btn.active{
-  color:var(--accent);
+  color:var(--success);
 }
 
 .nav-btn.active .nav-icon-wrap{
-  background:var(--accent-soft);
-  color:var(--accent);
+  background:rgba(34,197,94,.12);
+  color:var(--success);
 }
 
 .nav-btn span:last-child{
@@ -784,7 +843,7 @@ select:disabled{
 .career-card{
   background:var(--bg-base);
   color:var(--text-primary);
-  border:1px solid var(--accent);
+  border:none;
   border-radius:var(--radius-xl);
   padding:var(--space-6);
   box-shadow:var(--shadow-md);
@@ -799,7 +858,7 @@ select:disabled{
 }
 
 .career-status{
-  color:var(--accent);
+  color:var(--success);
   font-weight:var(--weight-bold);
   font-size:var(--text-sm);
   margin-top:var(--space-2);
@@ -826,7 +885,7 @@ select:disabled{
 
   width:0%;
 
-  background:var(--accent);
+  background:var(--success);
 
   border-radius:var(--radius-full);
 
@@ -858,6 +917,11 @@ select:disabled{
   font-size:var(--text-2xl);
   font-weight:var(--weight-black);
   letter-spacing:-.5px;
+}
+
+.career-meta-item:first-child strong{
+  color:var(--success);
+  font-size:32px;
 }
 
 .career-meta-item span{
@@ -1112,7 +1176,7 @@ select:disabled{
   text-transform:uppercase;
   letter-spacing:.5px;
   font-weight:var(--weight-bold);
-  color:var(--info);
+  color:var(--danger);
 }
 
 .event-hour{
@@ -1124,8 +1188,7 @@ select:disabled{
 
 /* =========================================================
    CALENDARIO — REDISEÑO ESTILO GOOGLE CALENDAR
-   Toolbar (Hoy + navegación + título a la izquierda, toggle
-   Mes/Semana a la derecha) y una grilla grande de celdas
+   Toolbar (Hoy + navegación + título) y una grilla grande de celdas
    parejas, con más aire y mejor jerarquía que la versión
    anterior. Solo toca presentación: sigue leyendo los mismos
    eventos generados por generateEvents() en calendar-view.js.
@@ -1215,7 +1278,7 @@ select:disabled{
 .calendar-day-name{
   font-weight:var(--weight-black);
   text-align:center;
-  padding:var(--space-2) 0 var(--space-3);
+  padding:var(--space-2) 0 var(--space-1);
   color:var(--text-tertiary);
   font-size:var(--text-xs);
   text-transform:uppercase;
@@ -1534,11 +1597,6 @@ select:disabled{
     height:32px;
     min-width:32px;
     padding:0;
-  }
-
-  .calendar-view-toggle button{
-    height:28px;
-    padding:0 var(--space-3);
   }
 
   .modal-actions{
@@ -2115,105 +2173,6 @@ html{
 ========================================================= */
 .event-dot.badge-presentacion{ background:var(--info); }
 .event-badge.badge-presentacion{ border-left-color:var(--info); }
-
-/* =========================================================
-   CALENDARIO — TOGGLE MES / SEMANA
-========================================================= */
-.calendar-view-toggle{
-  display:flex;
-  gap:var(--space-1);
-  padding:3px;
-  background:var(--bg-surface-2);
-  border:1px solid var(--border-subtle);
-  border-radius:var(--radius-full);
-  flex-shrink:0;
-}
-
-.calendar-view-toggle button{
-  height:30px;
-  padding:0 var(--space-4);
-  background:transparent;
-  color:var(--text-secondary);
-  border:none;
-  border-radius:var(--radius-full);
-  text-transform:uppercase;
-  font-size:var(--text-xs);
-  letter-spacing:.5px;
-}
-
-.calendar-view-toggle button.active{
-  background:var(--accent);
-  color:var(--accent-contrast);
-}
-
-/* =========================================================
-   CALENDARIO — VISTA SEMANA
-   Agenda de 7 columnas, cada una lista sus eventos del día
-   como badges (reutiliza .event-badge / .badge-<tipo>).
-========================================================= */
-.calendar-week-mode{
-  display:flex;
-  flex-direction:column;
-  gap:var(--space-3);
-}
-
-.calendar-week-day{
-  background:var(--bg-base);
-  border:1px solid var(--border-subtle);
-  border-radius:var(--radius-md);
-  padding:var(--space-3);
-  cursor:pointer;
-  overflow:hidden;
-  min-width:0;
-  transition:border-color var(--transition-fast),
-             background var(--transition-fast);
-}
-
-.calendar-week-day:hover{
-  border-color:var(--accent);
-  background:var(--bg-surface-2);
-}
-
-.calendar-week-day.today{
-  border-color:var(--accent);
-}
-
-.calendar-week-day-header{
-  display:flex;
-  align-items:center;
-  gap:var(--space-2);
-  margin-bottom:var(--space-2);
-}
-
-.calendar-week-day-name{
-  font-size:var(--text-xs);
-  font-weight:var(--weight-black);
-  text-transform:uppercase;
-  letter-spacing:1px;
-  color:var(--text-tertiary);
-}
-
-.calendar-week-day.today .calendar-week-day-name{
-  color:var(--accent);
-}
-
-.calendar-week-day-number{
-  font-size:var(--text-sm);
-  font-weight:var(--weight-bold);
-  color:var(--text-secondary);
-}
-
-.calendar-week-day-events{
-  display:flex;
-  flex-direction:column;
-  gap:var(--space-1);
-  min-width:0;
-}
-
-.calendar-week-empty{
-  font-size:var(--text-xs);
-  color:var(--text-tertiary);
-}
 
 /* =========================================================
    CLASS SPACE
