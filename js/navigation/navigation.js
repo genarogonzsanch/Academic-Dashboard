@@ -308,7 +308,7 @@ if(navigationAppContent){
    const currentIndex =
     PRIMARY_SCREENS.indexOf(activePrimaryScreen);
 
-   const nextIndex = deltaX > 0
+   const nextIndex = deltaX < 0
     ? currentIndex + 1
     : currentIndex - 1;
 

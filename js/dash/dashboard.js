@@ -513,10 +513,16 @@ _refreshIcons();
 // abrir/cerrar vive en la CABECERA (#pendingTasksHeading:
 // ícono + título + contador + flecha), igual que el patrón ya
 // usado por los acordeones de años/materias (.anio-header).
-// Cerrada, la tarjeta no muestra ninguna tarea; abierta,
+//
+// El acordeón SOLO controla la lista (".cs-task-list"): abierta,
 // muestra todas las pendientes de todas las materias en curso,
 // ya ordenadas por fecha de vencimiento (data.pendientes viene
-// así desde getAllPendingTasks()).
+// así desde getAllPendingTasks()); cerrada, la lista no muestra
+// ninguna tarea. El resto del encabezado del componente —botón
+// "Agregar" (headerHtml) y su composer (composerHtml)— NO forma
+// parte de lo que el acordeón pliega: se renderiza siempre,
+// esté abierto o cerrado, para que se pueda cargar una tarea
+// nueva sin necesidad de desplegar la lista.
 //
 // Al cerrar se sigue renderizando un contenedor ".cs-task-list"
 // vacío (en vez de vaciar la tarjeta por completo): el resto
@@ -538,7 +544,7 @@ const targetMateriaId =
     null;
 
 const headerHtml = `
-    <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-3);">
+    <div style="display:flex;justify-content:flex-start;margin-bottom:var(--space-3);">
         <button type="button" class="btn-class-space" id="addTaskBtn">
             <i data-lucide="plus" class="icon"></i>
             Agregar
@@ -683,7 +689,13 @@ if (heading) {
 
 if (!isOpen) {
 
-    card.innerHTML = `<div class="cs-task-list"></div>`;
+    card.innerHTML = `
+        ${headerHtml}
+        ${composerHtml}
+        <div class="cs-task-list"></div>
+    `;
+
+    bindComposerControls();
 
     _refreshIcons();
     return;
