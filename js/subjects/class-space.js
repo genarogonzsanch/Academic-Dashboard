@@ -244,9 +244,9 @@ function renderClassSpace(materiaId){
 // Se agrega acá para que, entrando a un Class Space desde
 // Home o Calendario, no haga falta volver a Carrera para
 // saber si la materia está cursando/aprobada/pendiente o si
-// ya tiene un horario cargado. Reutiliza getStates(),
-// getSchedules() y openScheduleModal() tal cual existen, sin
-// duplicar lógica ni agregar storage nuevo.
+// ya tiene un horario cargado. Reutiliza getStates() y
+// getSchedules() tal cual existen, sin duplicar lógica ni
+// agregar storage nuevo.
 // =========================================================
 
 function renderClassSpaceMeta(materiaId, materia){
@@ -295,27 +295,7 @@ function renderClassSpaceMeta(materiaId, materia){
 
   </div>
 
-  <button
-   type="button"
-   class="btn-horario"
-   id="csScheduleBtn"
-   style="margin-top:var(--space-3);"
-  >
-   <i data-lucide="calendar" class="icon"></i>
-   ${schedules.length > 0 ? "Agregar otro horario" : "Configurar horario"}
-  </button>
-
  `;
-
- container
-  .querySelector("#csScheduleBtn")
-  ?.addEventListener("click", () => {
-
-   if(typeof openScheduleModal === "function"){
-    openScheduleModal(materia);
-   }
-
-  });
 
  _refreshIcons();
 

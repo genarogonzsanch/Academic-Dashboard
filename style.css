@@ -203,7 +203,6 @@ select:focus-visible,
   margin:var(--space-5) auto;
   padding:0 var(--space-5) 100px;
   overflow-x:clip;
-  touch-action:pan-y;
 }
 
 @media(min-width:900px){
@@ -212,76 +211,10 @@ select:focus-visible,
   }
 }
 
-/* #appContent no tenía position propio: al no ser un ancestro
-   posicionado, .screen-transitioning (position:absolute) tomaba
-   como referencia el padding-box de .container, que es 2*20px
-   (var(--space-5)) más ancho que el área real de #appContent y
-   está desplazado 20px a la izquierda. Eso hacía que la pantalla
-   en transición apareciera más grande/desplazada y "saltara" a su
-   tamaño real al terminar la animación. Fijar position:relative
-   acá no cambia nada visualmente (no tiene padding/border propios),
-   solo corrige el contenedor de referencia para el position:absolute. */
-#appContent{
-  position:relative;
-}
-
 #homeScreen,
 #calendarScreen,
 #subjectsScreen{
   animation:fadeIn var(--transition-base) ease both;
-}
-
-#homeScreen{ z-index:1; }
-#calendarScreen{ z-index:2; }
-#subjectsScreen{ z-index:3; }
-
-.screen-transitioning{
-  position:absolute;
-  top:0;
-  left:0;
-  width:100%;
-  animation:none !important;
-  pointer-events:none;
-  will-change:transform, opacity;
-}
-
-.screen-transition-active{
-  transition:transform 240ms cubic-bezier(.4,0,.2,1),
-             opacity 240ms cubic-bezier(.4,0,.2,1);
-}
-
-.screen-enter-forward{
-  transform:translate3d(100%,0,0);
-  opacity:.94;
-}
-
-.screen-enter-forward.screen-transition-active{
-  transform:translate3d(0,0,0);
-  opacity:1;
-}
-
-.screen-exit-forward.screen-transition-active{
-  transform:translate3d(-18%,0,0);
-  opacity:.72;
-}
-
-.screen-enter-back{
-  transform:translate3d(-18%,0,0);
-  opacity:.72;
-}
-
-.screen-enter-back.screen-transition-active{
-  transform:translate3d(0,0,0);
-  opacity:1;
-}
-
-.screen-exit-back.screen-transition-active{
-  transform:translate3d(100%,0,0);
-  opacity:.94;
-}
-
-.screen-swipe-active{
-  user-select:none;
 }
 
 .header{
@@ -1138,14 +1071,9 @@ select:disabled{
   padding:var(--space-3) 0;
   background:transparent;
   border:0;
-  border-bottom:1px solid var(--border-subtle);
   border-radius:0;
   animation:fadeInUp var(--transition-base) ease both;
   transition:border-color var(--transition-base);
-}
-
-.event-row:hover{
-  border-color:var(--border-strong);
 }
 
 .event-row:nth-of-type(1){ animation-delay:20ms; }
@@ -2434,14 +2362,21 @@ html{
 }
 
 .cs-task-text{
+  display:block;
   font-size:var(--text-base);
   font-weight:var(--weight-semibold);
-  white-space:normal;
-  overflow:visible;
+  white-space:nowrap;
+  overflow-x:auto;
+  overflow-y:hidden;
   text-overflow:clip;
-  overflow-wrap:anywhere;
-  word-break:break-word;
+  min-width:0;
   line-height:1.45;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+
+.cs-task-text::-webkit-scrollbar{
+  display:none;
 }
 
 .cs-task-done .cs-task-text{
